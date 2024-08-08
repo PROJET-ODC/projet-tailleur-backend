@@ -13,7 +13,7 @@ export const isTailleurAuthenticated = (req, res, next) => {
         }
         // res.json({ message: 'Access granted', user });
         if(user && user.role === 'tailleur'){
-            req.params.id = user.id;
+            req.id = user.id;
             next();
         }else {
             res.status(403).json({message: 'No Authorization', status: 'KO'});
