@@ -89,35 +89,6 @@ class ClientController {
         }
     }
 
-    async createStatus(req, res) {
-        try {
-            const newStatus = new Status({ ...req.body, createdAt: new Date(), updatedAt: new Date() });
-            await newStatus.save();
-            return res.status(201).json({ status: newStatus, status: 'OK' });
-        } catch (err) {
-            return res.status(500).json({ message: err.message, status: 'KO' });
-        }
-    }
-
-    async listMessages(req, res) {
-        try {
-            const messages = await Message.find({ receiver_id: req.user.id }).populate('sender_id');
-            return res.status(200).json({ messages, status: 'OK' });
-        } catch (err) {
-            return res.status(500).json({ message: err.message, status: 'KO' });
-        }
-    }
-
-    async createMessage(req, res) {
-        try {
-            const newMessage = new Message({ ...req.body, createdAt: new Date(), updatedAt: new Date() });
-            await newMessage.save();
-            return res.status(201).json({ message: newMessage, status: 'OK' });
-        } catch (err) {
-            return res.status(500).json({ message: err.message, status: 'KO' });
-        }
-    }
-
  async getNotificationById(req, res) {
     try {
         const notification = await Notification.findById(req.params.id).populate('post_id').lean();
