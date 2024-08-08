@@ -19,8 +19,7 @@ router.route('/accueil')
 
 // Routes pour les statuts
 router.route('/status')
-    .get(clientController.listStatus)
-    .post(clientController.createStatus);
+    .get(clientController.listStatus);
 
 // Routes pour les messages
 
