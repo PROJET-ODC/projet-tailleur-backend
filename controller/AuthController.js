@@ -32,6 +32,10 @@ class AuthController {
                 return res.status(400).json({message: 'Mot de passe incorrect', status: 'KO'});
             }
 
+            if(compte.etat === 'desactiver'){
+                return res.status(200).json({message: 'Votre compte est desactivé', status: 'KO'});
+            }
+
             // Génération d'un token JWT
             const token = createJWT({id: compte._id, role: compte.role});
 
@@ -71,14 +75,18 @@ class AuthController {
              */
 
             // Vérifiez si l'utilisateur existe déjà
-            const existingUser = await Compte.findOne({
+            const existingCompte = await Compte.findOne({
                 $or: [
                     { email},
                     { identifiant}
                 ]
             });
-            if (existingUser) {
-                return res.status(400).json({message: 'Email déjà utilisé', status: 'KO',});
+            if (existingCompte) {
+                return res.status(400).json({message: 'Ce compte existe déjà', status: 'KO',});
+            }
+            const existingUser = await User.findOne({phone});
+            if (existingUser){
+                return res.status(400).json({message: 'Ce compte existe déjà', status: 'KO',});
             }
 
             if (password !== confirm_password){
