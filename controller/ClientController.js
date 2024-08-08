@@ -15,6 +15,7 @@ import Comment from "../model/Comment.js";
 import CommentResponse from "../model/CommentResponse.js";
 import "dotenv/config";
 import comment from "../model/Comment.js";
+import Follow from "../model/Follow.js";
 
 class ClientController {
 
@@ -640,6 +641,36 @@ class ClientController {
         }
 
         return res.json({message: 'Réponse de commentaire supprimée', status: 'OK'});
+    }
+
+    async follow(req,res) {
+        const {idFollowedCompte} = req.body;
+        const idCompte = req.id;
+
+        if (!idFollowedCompte) {
+            return res.status(400).json({message: 'ID de compte à suivre est obligatoire', status: 'KO'});
+        }
+
+        const follow = Follow.create({
+            followed_id: idFollowedCompte,
+            follower_id: idCompte
+        })
+
+        if(!follow) {
+            return res.status(500).json({ message: 'Le follow à échoué', status: 'KO'});
+        }
+
+        const followed = await Compte.findByIdAndUpdate(idFollowedCompte, {
+            $push: {follower_ids: idCompte},
+            updatedAt: new Date()
+        }, {new: true});
+
+        const follower = await Compte.findByIdAndUpdate(idCompte, {
+            $push: {follower_ids: idFollowedCompte},
+            updatedAt: new Date()
+        }, {new: true});
+
+        return res.json({message:'Vous avez suivi l\'utilisateur', status: 'OK'});
     }
 }
 
