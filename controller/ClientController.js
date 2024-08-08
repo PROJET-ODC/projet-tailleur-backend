@@ -14,6 +14,7 @@ import Like from '../model/Like.js';
 import Comment from "../model/Comment.js";
 import CommentResponse from "../model/CommentResponse.js";
 import "dotenv/config";
+import comment from "../model/Comment.js";
 
 class ClientController {
 
@@ -617,63 +618,16 @@ class ClientController {
 
     async deleteComment(req, res) {
         const { idComment } = req.body;
+        // return res.json(idComment);
         const idCompte = req.id;
 
-        const compte = await Compte.findById(idCompte);
-        const lecomment = await Comment.findById(idComment);
+        const commentDelete =  await Comment.findOneAndDelete(idComment);
 
-        if (!lecomment) {
-            return res.status(404).json({ message: 'Commentaire non trouvé', status: 'KO' });
+        if(!commentDelete){
+            return res.status(500).json({ message: 'Commentaire non trouvé', status: 'KO' });
         }
 
-        if (compte.role === "tailleur") {
-            const tailleur = await Tailleur.findOne({ compte_id: compte._id });
-
-            // si le role c'est tailleur, il peut supprimer ces commentaires et les commentaires d'autres sur son post
-            const post = await Post.findOneAndUpdate(
-                {
-                    _id: lecomment.post_id
-                },
-                {
-                    $pull: { comment_ids: idComment },
-                    updatedAt: new Date()
-                },
-                { new: true }
-            );
-
-            if (!post) {
-                return res.status(404).json({ message: 'Post non trouvé', status: 'KO' });
-            }
-
-            const commentDelete =  await Comment.findByIdAndDelete(idComment);
-
-            if(!commentDelete){
-                return res.status(500).json({ message: 'Commentaire non trouvé', status: 'KO' });
-            }
-
-            await CommentResponse.deleteMany({ comment_id: idComment });
-
-            return res.json({ message: 'Commentaire supprimé et ses réponses', status: 'OK' });
-
-        } else {
-            // Si le rôle n'est pas "tailleur", supprimer le commentaire et l'ID du commentaire du Post
-            const post = await Post.findOneAndUpdate(
-                { 'comment_ids._id': idComment },
-                {
-                    $pull: { comment_ids: idComment },
-                    updatedAt: new Date()
-                },
-                { new: true }
-            );
-
-            if (!post) {
-                return res.status(404).json({ message: 'Post non trouvé', status: 'KO' });
-            }
-
-            await Comment.findByIdAndDelete(idComment);
-
-            return res.json({ message: 'Commentaire supprimé', status: 'OK' });
-        }
+        return res.json({ message: 'Commentaire supprimé', status: 'OK' });
     }
 
     async deleteResponseComment(req, res) {
