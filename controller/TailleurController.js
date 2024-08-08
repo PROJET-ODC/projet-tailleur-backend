@@ -6,7 +6,7 @@ class TailleurController{
         try {
 
         } catch (err) {
-            return res.status(500).json({message: err.message,status: 'KO'});
+            return res.status(500).json({message: err.message,status: 'KOk'});
         }
     }
 
