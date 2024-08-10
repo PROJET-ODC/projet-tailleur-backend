@@ -535,11 +535,15 @@ class ClientController {
         // Extract user IDs
         const userIds = await usersResult.map(user => user._id);
 
-        // Search in comptes collection using the user IDs
         const comptes = await Compte.find({
-            $or: [
-                {user_id: {$in: userIds}},
-                {identifiant: {$regex: regex}}
+            $and: [
+                {
+                    $or: [
+                        { user_id: { $in: userIds } },
+                        { identifiant: { $regex: regex } }
+                    ]
+                },
+                { etat: "active" }
             ]
         });
 
@@ -672,6 +676,69 @@ class ClientController {
 
         return res.json({message:'Vous avez suivi l\'utilisateur', status: 'OK'});
     }
+
+    async getSomeProfile(req, res){
+        const {identifiant} = req.params.identifiant;
+        const idCompte = req.id;
+        const monCompte = await Compte.findById(idCompte);
+
+        const compte = await Compte.findOne({identifiant});
+        const user = await User.findOne({_id: compte.user_id});
+        let isMyFollower = false;
+        let searhIfFollower = null;
+
+        if(monCompte.role === 'tailleur'){
+            searhIfFollower = await Follow.findOne({
+                $or: [
+                    {
+                        follower_id: idCompte,
+                        followed_id: compte._id
+                    },
+                    {
+                        follower_id: compte._id,
+                        followed_id: idCompte
+                    },
+                ]
+            })
+        }else{
+            searhIfFollower = await Follow.findOne({
+                follower_id: idCompte,
+                followed_id: compte._id
+            })
+        }
+
+        isMyFollower = searhIfFollower ? true : false;
+
+
+        if(compte.role === 'tailleur') {
+            const tailleur = await Tailleur.findOne({compte_id: compte._id});
+
+            const posts = await Post.find({author_id: tailleur._id});
+
+            return res.json({user, compte, posts,isMyFollower, message: "Profile de l'utilisateur", status: 'OK'});
+        }
+        if (compte.role === 'client'){
+            const posts = await compte.find()
+                .populate({
+                    path: 'follower_ids',
+                    populate: {
+                        path: 'followed_id',
+                        match: {etat: 'active'}
+                    }
+                })
+                .populate({
+                    path: 'compte_id',
+                    model: 'Tailleur'
+                })
+                .populate({
+                    path: 'author_id',
+                    model: 'Post',
+                    options: {sort: {createdAt: -1}}
+                });
+            return res.json({user, compte, posts,isMyFollower, message: "Profile de l'utilisateur" , status: 'OK'});
+        }
+    }
+
 }
 
 export default new ClientController();
