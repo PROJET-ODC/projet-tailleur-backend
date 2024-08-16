@@ -1,0 +1,450 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  lastname  String
+  firstname String
+  phone     String   @unique
+  city      String
+  picture   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  compte    Compte?
+
+  @@map("users")
+}
+
+model Compte {
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  password      String
+  role          String
+  etat          String
+  identifiant   String         @unique
+  bio           String
+  credit        Int
+  user_id       Int            @unique
+  user          User           @relation(fields: [user_id], references: [id])
+  tailleur      Tailleur?
+  client        Client?
+  vendeur       Vendeur?
+  mesure        Mesure?
+  followeds     Follow[]       @relation("Followeds")
+  followers     Follow[]       @relation("Followers")
+  reporteds     Report[]       @relation("Reporteds")
+  reporters     Report[]       @relation("Reporters")
+  noteds        Note[]         @relation("Noteds")
+  noters        Note[]         @relation("Noters")
+  blockeds      Bloquer[]      @relation("Blockeds")
+  blockers      Bloquer[]      @relation("Blockers")
+  messageds     Message[]      @relation("Messageds")
+  messagers     Message[]      @relation("Messagers")
+  comments      Comment[]
+  likes         Like[]
+  favoris       Favori[]
+  notifications Notification[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @default(now())
+
+  @@map("comptes")
+}
+
+model Tailleur {
+  id        Int               @id @default(autoincrement())
+  compte_id Int               @unique
+  compte    Compte            @relation(fields: [compte_id], references: [id])
+  posts     Post[]
+  status    Status[]
+  commande  CommandeArticle[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @default(now())
+
+  @@map("tailleurs")
+}
+
+model Client {
+  id        Int      @id @default(autoincrement())
+  compte_id Int      @unique
+  compte    Compte   @relation(fields: [compte_id], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("clients")
+}
+
+model Mesure {
+  id        Int      @id @default(autoincrement())
+  compte_id Int      @unique
+  compte    Compte   @relation(fields: [compte_id], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("mesures")
+}
+
+model Report {
+  id          Int      @id @default(autoincrement())
+  motif       String
+  reporter_id Int
+  reported_id Int
+  reporter    Compte   @relation("Reporters", fields: [reporter_id], references: [id])
+  reported    Compte   @relation("Reporteds", fields: [reported_id], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+
+  @@unique([reporter_id, reported_id])
+  @@map("reports")
+}
+
+model Note {
+  id        Int      @id @default(autoincrement())
+  note      String
+  noter_id  Int
+  noted_id  Int
+  noter     Compte   @relation("Noters", fields: [noter_id], references: [id])
+  noted     Compte   @relation("Noteds", fields: [noted_id], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@unique([noter_id, noted_id])
+  @@map("notes")
+}
+
+model Bloquer {
+  id         Int      @id @default(autoincrement())
+  blocker_id Int
+  blocked_id Int
+  blocker    Compte   @relation("Blockers", fields: [blocker_id], references: [id])
+  blocked    Compte   @relation("Blockeds", fields: [blocked_id], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
+
+  @@unique([blocker_id, blocked_id])
+  @@map("bloquers")
+}
+
+enum StatusFollow {
+  FOLLOWED
+  UNFOLLOWED
+}
+
+model Follow {
+  id          Int          @id @default(autoincrement())
+  status      StatusFollow
+  follower_id Int
+  followed_id Int
+  follower    Compte       @relation("Followers", fields: [follower_id], references: [id])
+  followed    Compte       @relation("Followeds", fields: [followed_id], references: [id])
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now())
+
+  @@unique([follower_id, followed_id])
+  @@map("follows")
+}
+
+model Message {
+  id          Int      @id @default(autoincrement())
+  texte       String
+  messager_id Int
+  messaged_id Int
+  messager    Compte   @relation("Messagers", fields: [messager_id], references: [id])
+  messaged    Compte   @relation("Messageds", fields: [messaged_id], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+
+  @@unique([messager_id, messaged_id])
+  @@map("messages")
+}
+
+enum CategoriePost {
+  IMAGE
+  VIDEO
+}
+
+enum StatusPost {
+  PUBLIE
+  PAS_PUBLIE
+  ARCHIVE
+}
+
+model Status {
+  id          Int      @id @default(autoincrement())
+  files       Json
+  description String
+  duration    String
+  viewNb      Int
+  tailleur_id Int
+  tailleur    Tailleur @relation(fields: [tailleur_id], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+}
+
+model Post {
+  id          Int           @id @default(autoincrement())
+  content     String
+  title       String
+  files       Json?
+  count       Int
+  shareNb     Int
+  viewNb      Int
+  tailleur_id Int
+  status      StatusPost
+  categorie   CategoriePost
+  tailleur    Tailleur      @relation(fields: [tailleur_id], references: [id])
+  tags        Tag[]
+  comments    Comment[]
+  favoris     Favori[]
+  likes       Like[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now())
+
+  @@map("posts")
+}
+
+model Tag {
+  id        Int      @id @default(autoincrement())
+  libelle   String
+  post_id   Int
+  post      Post     @relation(fields: [post_id], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("tags")
+}
+
+model Comment {
+  id        Int               @id @default(autoincrement())
+  content   String
+  post_id   Int
+  compte_id Int
+  post      Post              @relation(fields: [post_id], references: [id])
+  compte    Compte            @relation(fields: [compte_id], references: [id])
+  responses CommentResponse[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @default(now())
+
+  @@map("comments")
+}
+
+model CommentResponse {
+  id         Int      @id @default(autoincrement())
+  content    String
+  comment_id Int
+  comment    Comment  @relation(fields: [comment_id], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
+}
+
+model Favori {
+  id        Int      @id @default(autoincrement())
+  compte_id Int
+  post_id   Int
+  post      Post     @relation(fields: [post_id], references: [id])
+  compte    Compte   @relation(fields: [compte_id], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("favoris")
+}
+
+enum etatLike {
+  LIKE
+  DISLIKE
+  UNLIKE
+}
+
+model Like {
+  id        Int      @id @default(autoincrement())
+  etat      etatLike
+  compte_id Int
+  post_id   Int
+  post      Post     @relation(fields: [post_id], references: [id])
+  compte    Compte   @relation(fields: [compte_id], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("likes")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  content   String
+  compte_id Int
+  compte    Compte   @relation(fields: [compte_id], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("notifications")
+}
+
+enum etatCommande {
+  TERMINER
+  EN_ATTENTE
+}
+
+model CommandeArticle {
+  id              Int                     @id @default(autoincrement())
+  etat            etatCommande
+  numero          String
+  montantTotal    Decimal
+  tailleur_id     Int
+  tailleur        Tailleur                @relation(fields: [tailleur_id], references: [id])
+  paiement        PaiementArticle[]
+  detailcommandes DetailCommandeArticle[]
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @default(now())
+
+  @@map("commande_articles")
+}
+
+model Stock {
+  id         Int      @id @default(autoincrement())
+  prix       Decimal
+  qte        Int
+  article_id Int
+  article    Article  @relation(fields: [article_id], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
+
+  @@map("stocks")
+}
+
+model DetailCommandeArticle {
+  id          Int             @id @default(autoincrement())
+  qte         Int
+  prix        Decimal
+  article_id  Int
+  article     Article         @relation(fields: [article_id], references: [id])
+  commande_id Int
+  commande    CommandeArticle @relation(fields: [commande_id], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @default(now())
+
+  @@map("detail_commande_articles")
+}
+
+enum etatArticle {
+  DELETE
+  ACTIF
+}
+
+model Article {
+  id              Int                     @id @default(autoincrement())
+  libelle         String
+  etat            etatArticle
+  image           Json
+  description     String
+  prix            Decimal
+  qte             Int
+  slug            String                  @unique
+  detailcommandes DetailCommandeArticle[]
+  article_unite   ArticleUnite[]
+  categorie_id    Int
+  categorie       Categorie               @relation(fields: [categorie_id], references: [id])
+  vendeur_id      Int
+  vendeur         Vendeur                 @relation(fields: [vendeur_id], references: [id])
+  couleur_article CouleurArticle[]
+  stock           Stock[]
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @default(now())
+
+  @@map("articles")
+}
+
+model Unite {
+  id            Int            @id @default(autoincrement())
+  libelle       String
+  article_unite ArticleUnite[]
+  categorie_id  Int
+  categorie     Categorie      @relation(fields: [categorie_id], references: [id])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @default(now())
+
+  @@map("unites")
+}
+
+model PaiementArticle {
+  id          Int             @id @default(autoincrement())
+  montant     Decimal
+  commande_id Int
+  commande    CommandeArticle @relation(fields: [commande_id], references: [id])
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @default(now())
+
+  @@map("paiements_articles")
+}
+
+model ArticleUnite {
+  id         Int      @id @default(autoincrement())
+  prix       Int
+  article_id Int
+  article    Article  @relation(fields: [article_id], references: [id])
+  unite_id   Int
+  unite      Unite    @relation(fields: [unite_id], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
+
+  @@map("article_unites")
+}
+
+model Categorie {
+  id         Int       @id @default(autoincrement())
+  libelle    String
+  article    Article[]
+  categories Unite[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @default(now())
+
+  @@map("categories")
+}
+
+model Vendeur {
+  id        Int       @id @default(autoincrement())
+  compte_id Int       @unique
+  compte    Compte    @relation(fields: [compte_id], references: [id])
+  articles  Article[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now())
+
+  @@map("vendeurs")
+}
+
+model Couleur {
+  id              Int              @id @default(autoincrement())
+  couleur_article CouleurArticle[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @default(now())
+
+  @@map("couleurs")
+}
+
+model CouleurArticle {
+  id         Int      @id @default(autoincrement())
+  article_id Int
+  article    Article  @relation(fields: [article_id], references: [id])
+  couleur_id Int
+  couleur    Couleur  @relation(fields: [couleur_id], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
+
+  @@map("couleur_articles")
+}
+
+// model X {
+//   id        Int      @id @default(autoincrement())
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @default(now())
+// }

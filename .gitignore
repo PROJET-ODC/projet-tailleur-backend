@@ -1,4 +1,6 @@
 node_modules/*
 .env
 RAM.js
-tmp/*
+dist/tmp/*
+.vscode/*
+.idea/*
