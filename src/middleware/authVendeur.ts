@@ -22,5 +22,4 @@ export const isClientAuthenticated = (req: AuthenticatedRequest, res: Response, 
             res.status(403).json({message: 'No Authorization', status: 'KO'});
         }
     })
-
 }
