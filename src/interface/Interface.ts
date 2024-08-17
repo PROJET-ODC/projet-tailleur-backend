@@ -7,3 +7,7 @@ export interface IMiddlewareUser{
 export interface AuthenticatedRequest extends Request {
     id?: string;
 }
+
+export interface ControllerRequest extends Request {
+    id?: string;
+}

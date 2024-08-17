@@ -1,12 +1,13 @@
-import { Request, Response } from "express";
+import {Response } from "express";
 import { PrismaClient } from "@prisma/client";
-import { verifyPassword, hashPassword } from "../utils/password";
-import { createJWT } from "../utils/jwt";
+import { verifyPassword, hashPassword } from "../utils/password.js";
+import { createJWT } from "../utils/jwt.js";
+import {ControllerRequest} from "../interface/Interface.js";
 
 const prisma = new PrismaClient();
 
 class AuthController {
-    async login(req: Request, res: Response) {
+    async login(req: ControllerRequest, res: Response) {
         try {
             const { email, password } = req.body;
 
@@ -42,7 +43,7 @@ class AuthController {
         }
     }
 
-    logout(req: Request, res: Response) {
+    logout(req: ControllerRequest, res: Response) {
         req.session.destroy((err) => {
             if (err) {
                 return res.status(500).json({ message: "La déconnexion a échoué", status: "KO" });
@@ -51,7 +52,7 @@ class AuthController {
         });
     }
 
-    async register(req: Request, res: Response) {
+    async register(req: ControllerRequest, res: Response) {
         try {
             const {
                 lastname,
@@ -64,6 +65,7 @@ class AuthController {
                 phone,
                 city,
                 picture,
+                bio
             } = req.body;
 
             /**
@@ -117,11 +119,12 @@ class AuthController {
                     email,
                     identifiant,
                     role,
-                    password: hashedPassword,
+                    password: hashedPassword!,
                     user_id: user.id,
                     updatedAt: new Date(),
                     createdAt: new Date(),
                     etat: "active",
+                    bio,
                     credit: 0,
                 },
             });
@@ -149,25 +152,6 @@ class AuthController {
             res.status(201).json({ message: "L'inscription a réussi", status: "OK" });
         } catch (error) {
             res.status(500).json({ message: "Erreur lors de l'inscription", status: "KO", error });
-        }
-    }
-
-    async getLoginUser(req: Request, res: Response) {
-        try {
-            const { id } = req.params;
-
-            // Trouver le client par ID
-            const user = await prisma.user.findUnique({
-                where: { id: parseInt(id) },
-            });
-
-            if (!user) {
-                return res.status(404).json({ message: "User non trouvé" });
-            }
-
-            res.status(200).json(user);
-        } catch (error) {
-            res.status(500).json({ message: "Erreur lors de la récupération du user", error });
         }
     }
 }

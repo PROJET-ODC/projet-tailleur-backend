@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import {AuthenticatedRequest, IMiddlewareUser} from "../interface/Interface";
 import {NextFunction, Response} from "express";
 
-export const isClientAuthenticated = (req: AuthenticatedRequest, res: Response, next: NextFunction)  => {
+export const isTailleurAuthenticated = (req: AuthenticatedRequest, res: Response, next: NextFunction)  => {
     const authHeader = req.headers.authorization
     const token = authHeader && authHeader.split(' ')[1];
     if (token == null) {

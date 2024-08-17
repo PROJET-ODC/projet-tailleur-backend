@@ -2,7 +2,6 @@ import express from "express";
 import "dotenv/config";
 import { v2 as cloudinary } from 'cloudinary';
 import fileUpload from "express-fileupload";
-import { PrismaClient } from "@prisma/client";
 import { router as authRoutes } from "./routes/auth.js";
 import { router as clientRoutes } from "./routes/client.js";
 import { router as tailleurRoutes } from "./routes/tailleur.js";
@@ -12,7 +11,6 @@ import yamljs from "yamljs";
 import path from "path";
 import { fileURLToPath } from 'url';
 const app = express();
-const prisma = new PrismaClient();
 cloudinary.config({
     cloud_name: process.env.CLOUD_NAME,
     api_key: process.env.CLOUD_API_KEY,
