@@ -4,3 +4,5 @@ RAM.js
 dist/tmp/*
 .vscode/*
 .idea/*
+dist/seeds.js
+dist/playground-22.mongodb.js
