@@ -9,12 +9,12 @@ const prisma = new PrismaClient();
 
 class TailleurController {
     constructor() {
-        // for (const key of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
-        //     const val = this[key];
-        //     if (key !== 'constructor' && typeof val === 'function') {
-        //         this[key] = val.bind(this);
-        //     }
-        // }
+        for (const key of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
+            const val = (this as any)[key];
+            if (key !== 'constructor' && typeof val === 'function') {
+                (this as any)[key] = val.bind(this);
+            }
+        }
     }
 
     // Function to list all posts of the logged-in user (tailor or client)

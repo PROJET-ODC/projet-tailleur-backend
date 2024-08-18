@@ -4,6 +4,12 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 class TailleurController {
     constructor() {
+        for (const key of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
+            const val = this[key];
+            if (key !== 'constructor' && typeof val === 'function') {
+                this[key] = val.bind(this);
+            }
+        }
     }
     async listMyAllPosts(req, res) {
         try {
