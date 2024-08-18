@@ -4,4 +4,5 @@ import { isAuthenticatedGlobal } from "../middleware/auth.js";
 const router = express.Router();
 router.use(isAuthenticatedGlobal);
 router.route('/accueil').get(clientController.getNewsFeed);
+router.route('/profile').get(clientController.userProfile);
 export { router };
