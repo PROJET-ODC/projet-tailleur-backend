@@ -2261,6 +2261,831 @@ paths:
                     type: string
                     example: "KO"
 
+  /api/v1/vendeur/articles:
+    post:
+      summary: Créer un article
+      tags:
+        - Vendeur
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                libelle:
+                  type: string
+                  description: Titre de l'article.
+                  example: "Mon article"
+                  minLength: 1
+                  maxLength: 100
+                categorie_id:
+                  type: integer
+                  description: Identifiant de la catégorie de l'article.'
+                  example: 1
+                images: 
+                  type: array
+                  description: Images associées à l'article.'
+                  items:
+                    type: string
+                    example: "https://example.com/image1.jpg"
+                  minItems: 1
+                  maxItems: 10
+                description:
+                  type: string
+                  description: Description détaillée de l'article.'
+                  example: "Un article de qualité"
+                  minLength: 10
+                  maxLength: 500
+                couleurs:
+                  type: array
+                  description: Couleurs disponibles pour l'article.'
+                  items:
+                    type: id
+                    example: 1
+                  minItems: 1
+                unites:
+                  type: array
+                  description: Unités disponibles pour l'article.'
+                  items:
+                    type: object
+      responses:
+        "201":
+          description: Article ajouté avec succée.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Article ajouté avec succè."
+                  status:
+                    type: string
+                    example: "OK"
+        "400":
+          description: Requête invalide ou données manquantes.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Requête invalide. Les données de blocage sont manquantes ou incorrectes."
+                  status:
+                    type: string
+                    example: "KO"
+        "404":
+          description: Article non ajouter.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Article non ajouter"
+                  status:
+                    type: string
+                    example: "KO"
+        "500":
+          description: Erreur interne du serveur.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erreur interne du serveur."
+                  status:
+                    type: string
+                    example: "KO"
+    get:
+      summary: Lister mes article
+      tags:
+        - Vendeur
+      security:
+        - bearerAuth: [ ]
+      responses:
+        "201":
+          description: La liste de mes articles.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  articles:
+                    type: array
+                    items:
+                      type: object
+                  message:
+                    type: string
+                    example: "Liste de mes articles."
+                  status:
+                    type: string
+                    example: "OK"
+        "400":
+          description: Requête invalide ou données manquantes.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Requête invalide. Les données de blocage sont manquantes ou incorrectes."
+                  status:
+                    type: string
+                    example: "KO"
+        "404":
+          description: Pas d'articles.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Pas d'articles"
+                  status:
+                    type: string
+                    example: "KO"
+        "500":
+          description: Erreur interne du serveur.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erreur interne du serveur."
+                  status:
+                    type: string
+                    example: "KO"
+    put:
+      summary: Mettre à jour le stock d'un article
+      tags:
+        - Vendeur
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                idArticle:
+                  type: string
+                  description: Titre de l'article.
+                  example: "Mon article"
+                  minLength: 1
+                  maxLength: 100
+                unites:
+                  type: array
+                  description: La quantite par unité.
+                  items:
+                    type: object
+      responses:
+        "201":
+          description: Article mis à jour avec succée.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Article mis à jour avec succè."
+                  status:
+                    type: string
+                    example: "OK"
+        "400":
+          description: Requête invalide ou données manquantes.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Requête invalide. Les données de blocage sont manquantes ou incorrectes."
+                  status:
+                    type: string
+                    example: "KO"
+        "404":
+          description: Article non ajouter.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Utilisateur à bloquer non trouvé."
+                  status:
+                    type: string
+                    example: "KO"
+        "500":
+          description: Erreur interne du serveur.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erreur interne du serveur."
+                  status:
+                    type: string
+                    example: "KO"
+
+  /api/v1/vendeur/commandes:
+    get:
+      summary: lister mes article
+      tags:
+        - Vendeur
+      security:
+        - bearerAuth: [ ]
+      responses:
+        "201":
+          description: La liste de mes articles.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  commandes:
+                    type: array
+                    items:
+                      type: object
+                  message:
+                    type: string
+                    example: "Liste de mes articles."
+                  status:
+                    type: string
+                    example: "OK"
+        "400":
+          description: Requête invalide ou données manquantes.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Requête invalide. Les données de blocage sont manquantes ou incorrectes."
+                  status:
+                    type: string
+                    example: "KO"
+        "404":
+          description: Pas de commande.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Pas de commande."
+                  status:
+                    type: string
+                    example: "KO"
+        "500":
+          description: Erreur interne du serveur.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erreur interne du serveur."
+                  status:
+                    type: string
+                    example: "KO"
+
+  /api/v1/tailleur/articles/categories:
+    get:
+      summary: Lister les catégories d'articles
+      tags:
+        - Tailleur
+      security:
+        - bearerAuth: [ ]
+      responses:
+        "201":
+          description: La liste des catégories d'articles.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                  message:
+                    type: string
+                    example: "La liste des catégories d'articles"
+                  status:
+                    type: string
+                    example: "OK"
+        "400":
+          description: Requête invalide ou données manquantes.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Requête invalide. Les données de blocage sont manquantes ou incorrectes."
+                  status:
+                    type: string
+                    example: "KO"
+        "404":
+          description: Pas de Categorie.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Pas de commande."
+                  status:
+                    type: string
+                    example: "KO"
+        "500":
+          description: Erreur interne du serveur.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erreur interne du serveur."
+                  status:
+                    type: string
+                    example: "KO"
+
+  /api/v1/tailleur/articles:
+    get:
+      summary: Lister mes articles
+      tags:
+        - Tailleur
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                idCategorie:
+                  type: number
+                  description: Titre de la catégorie.
+                  example: "Mon article"
+                  minLength: 1
+      responses:
+        "201":
+          description: La liste des d'articles.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  articles:
+                    type: array
+                    items:
+                      type: object
+                  message:
+                    type: string
+                    example: "La liste des articles"
+                  status:
+                    type: string
+                    example: "OK"
+        "400":
+          description: Requête invalide ou données manquantes.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Requête invalide. Les données de blocage sont manquantes ou incorrectes."
+                  status:
+                    type: string
+                    example: "KO"
+        "404":
+          description: Pas d'articles.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Pas d'articles."
+                  status:
+                    type: string
+                    example: "KO"
+        "500":
+          description: Erreur interne du serveur.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erreur interne du serveur."
+                  status:
+                    type: string
+                    example: "KO"
+
+  /api/v1/tailleur/articles/:slug:
+    get:
+      summary: Obtenir un article par son slug
+      tags:
+        - Tailleur
+      security:
+        - bearerAuth: [ ]
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          description: Slug de l'article
+          example: "tissu-article"
+      responses:
+        "200":
+          description: Article Trouvé.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  articles:
+                    type: array
+                    items:
+                      type: object
+                  message:
+                    type: string
+                    example: "Article Trouvé"
+                  status:
+                    type: string
+                    example: "OK"
+        "400":
+          description: Requête invalide ou données manquantes.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Requête invalide. Les données de blocage sont manquantes ou incorrectes."
+                  status:
+                    type: string
+                    example: "KO"
+        "404":
+          description: Article pas Trouvé.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Article pas Trouvé."
+                  status:
+                    type: string
+                    example: "KO"
+        "500":
+          description: Erreur interne du serveur.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erreur interne du serveur."
+                  status:
+                    type: string
+                    example: "KO"
+
+  /api/v1/tailleur/approvisions:
+    post:
+      summary: Approvisionner des articles
+      tags:
+        - Tailleur
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                idVendeur:
+                  type: number
+                  description: Identifiant du vendeur.
+                  example: 123
+                accompte:
+                  type: number
+                  description: Montant de l'accompte.
+                  example: 1000
+                articles:
+                  type: array
+                  items:
+                    type: object
+      responses:
+        "201":
+          description: Approvisionnement ajouter avec succès.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  articles:
+                    type: array
+                    items:
+                      type: object
+                  message:
+                    type: string
+                    example: "Approvisionnement ajouter avec succès."
+                  status:
+                    type: string
+                    example: "OK"
+        "400":
+          description: Requête invalide ou données manquantes.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Requête invalide. Les données de blocage sont manquantes ou incorrectes."
+                  status:
+                    type: string
+                    example: "KO"
+        "404":
+          description: Approvisionnement pas ajouter.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Approvisionnement pas ajouter."
+                  status:
+                    type: string
+                    example: "KO"
+        "500":
+          description: Erreur interne du serveur.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erreur interne du serveur."
+                  status:
+                    type: string
+                    example: "KO"
+    get:
+      summary: Liste Approvisionnement
+      tags:
+        - Tailleur
+      security:
+        - bearerAuth: [ ]
+      responses:
+        "201":
+          description: La liste de mes approvisionnement.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  commandes:
+                    type: array
+                    items:
+                      type: object
+                  message:
+                    type: string
+                    example: "La liste de mes approvisionnement."
+                  status:
+                    type: string
+                    example: "OK"
+        "400":
+          description: Requête invalide ou données manquantes.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Requête invalide. Les données de blocage sont manquantes ou incorrectes."
+                  status:
+                    type: string
+                    example: "KO"
+        "404":
+          description: Pas d'approvisionnement.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Pas d'approvisionnement."
+                  status:
+                    type: string
+                    example: "KO"
+        "500":
+          description: Erreur interne du serveur.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erreur interne du serveur."
+                  status:
+                    type: string
+                    example: "KO"
+
+  /api/v1/tailleur/approvisions/payereste:
+    post:
+      summary: Paiement du reste de la commande
+      tags:
+        - Tailleur
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                idCommande:
+                  type: number
+                  description: Identifiant de la commande.
+                  example: 123
+                montant:
+                  type: number
+                  description: Montant du paiement.
+                  example: 1000
+      responses:
+        "201":
+          description: Paiement effectué avec succès.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  articles:
+                    type: array
+                    items:
+                      type: object
+                  message:
+                    type: string
+                    example: "Paiement effectué avec succès."
+                  status:
+                    type: string
+                    example: "OK"
+        "400":
+          description: Requête invalide ou données manquantes.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Requête invalide. Les données de blocage sont manquantes ou incorrectes."
+                  status:
+                    type: string
+                    example: "KO"
+        "404":
+          description: Paiement non effectué.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Paiement non effectué."
+                  status:
+                    type: string
+                    example: "KO"
+        "500":
+          description: Erreur interne du serveur.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erreur interne du serveur."
+                  status:
+                    type: string
+                    example: "KO"
+
+  /api/v1/tailleur/approvisions/details:
+    get:
+      summary: Liste Approvisionnement
+      tags:
+        - Tailleur
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                idCommande:
+                  type: number
+                  description: Identifiant de la commande.
+                  example: 123
+      responses:
+        "201":
+          description: détails de l'approvisionnement.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  commandes:
+                    type: array
+                    items:
+                      type: object
+                  message:
+                    type: string
+                    example: "détails de l'approvisionnement."
+                  status:
+                    type: string
+                    example: "OK"
+        "400":
+          description: Requête invalide ou données manquantes.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Requête invalide. Les données de blocage sont manquantes ou incorrectes."
+                  status:
+                    type: string
+                    example: "KO"
+        "404":
+          description: Pas de détails d'approvisionnement.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Pas de détails d'approvisionnement."
+                  status:
+                    type: string
+                    example: "KO"
+        "500":
+          description: Erreur interne du serveur.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Erreur interne du serveur."
+                  status:
+                    type: string
+                    example: "KO"
+
 components:
   securitySchemes:
     bearerAuth:
