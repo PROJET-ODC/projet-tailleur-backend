@@ -120,6 +120,34 @@ class TailleurController {
         }
     }
     async updateArticle(req, res) {
+        const { unites, article_id } = req.body;
+        const compte_id = parseInt(req.id);
+        const vendeur = await prisma.vendeur.findUnique({
+            where: { compte_id }
+        });
+        if (!vendeur) {
+            return res.status(404).json({ message: 'Vendeur non trouvé', status: 'KO' });
+        }
+        for (const unite of unites) {
+            let article_unite = await prisma.articleUnite.updateMany({
+                where: {
+                    article_id: article_id,
+                    unite_id: unite.unite_id,
+                },
+                data: {
+                    qte: {
+                        increment: unite.qte,
+                    },
+                }
+            });
+            if (!article_unite) {
+                return res.status(500).json({
+                    message: 'Une erreur est survenue lors de la mise à jour de la quantité pour l\'article',
+                    status: 'KO'
+                });
+            }
+        }
+        return res.json({ message: "Les quantités des articles ont été mises à jour avec succès", status: "OK" });
     }
     async myCommandes(req, res) {
     }
