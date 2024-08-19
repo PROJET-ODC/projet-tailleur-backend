@@ -180,9 +180,45 @@ class TailleurController {
         return res.json({message: "Les quantités des articles ont été mises à jour avec succès", status:"OK"});
     }
     async myCommandes (req: ControllerRequest, res: Response){
+        const id = parseInt(req.id!);
+        const vendeur = await prisma.vendeur.findUnique({
+            where:{compte_id:id}
+        });
 
+        if(!vendeur){
+            return res.status(404).json({message: 'Vendeur non trouvé', status:'KO'});
+        }
+
+        try {
+            const commandes = await prisma.commandeArticle.findMany({
+                where: {
+                    detailcommandes: {
+                        some: {
+                            article: {
+                                vendeur_id: vendeur.id // Remplacez vendeurId par l'ID du vendeur spécifique
+                            }
+                        }
+                    }
+                },
+                include: {
+                    detailcommandes: {
+                        include: {
+                            article: true // Inclut les articles pour chaque détail de commande
+                        }
+                    }
+                }
+            });
+
+            return res.json({commandes, message: "Les commandes sont récupérées avec succès", status:"OK"});
+
+        }catch(err){
+            if(err instanceof Error){
+                return res.json({message: err.message, status: "KO"})
+            }
+        }
     }
     async validateCommandes (req: ControllerRequest, res: Response){
+
     }
 
 
