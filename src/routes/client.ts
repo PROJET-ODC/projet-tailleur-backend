@@ -13,7 +13,7 @@ router.route('/accueil').get(clientController.getNewsFeed); // Route pour obteni
 // router.route('/posts/:id').get(clientController.getPostById);
 router.route('/profile').get(clientController.userProfile);
 // // Route pour la recherche de la page fil d'actualité
-// router.route('/accueil/search').post(clientController.accueilSearch);
+router.route('/accueil/search').post(clientController.accueilSearch);
 //
 
 export { router };

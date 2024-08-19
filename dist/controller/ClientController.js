@@ -37,6 +37,7 @@ class ClientController {
                     { status: 'PUBLIE' }
                 ]
             },
+            include: { tags: true }
         });
         return myFollowersPost;
     }
@@ -95,6 +96,7 @@ class ClientController {
                             { status: 'PUBLIE' }
                         ]
                     },
+                    include: { tags: true }
                 });
                 const myOwnStatus = await prisma.status.findMany({
                     where: { tailleur_id: tailleur?.id },
@@ -159,6 +161,54 @@ class ClientController {
         }
         catch (error) {
             return res.status(500).json({ message: 'Erreur interne du serveur', status: 'KO' });
+        }
+    }
+    async accueilSearch(req, res) {
+        try {
+            const { searchText } = req.body;
+            const regex = new RegExp(searchText, 'i');
+            const users = await prisma.user.findMany({
+                where: {
+                    OR: [
+                        { lastname: { contains: searchText } },
+                        { firstname: { contains: searchText, } }
+                    ]
+                }
+            });
+            const userIds = users.map(user => user.id);
+            const comptes = await prisma.compte.findMany({
+                where: {
+                    OR: [
+                        { user_id: { in: userIds } },
+                        { identifiant: { contains: searchText } }
+                    ],
+                    etat: 'active'
+                }
+            });
+            const posts = await prisma.post.findMany({
+                where: {
+                    OR: [
+                        {
+                            content: { contains: searchText }
+                        },
+                        {
+                            title: { contains: searchText }
+                        },
+                        {
+                            tags: {
+                                some: {
+                                    libelle: { contains: searchText }
+                                }
+                            }
+                        }
+                    ]
+                },
+                include: { tags: true }
+            });
+            return res.json({ comptes, posts, message: 'Résultats de la recherche', status: 'OK' });
+        }
+        catch (error) {
+            return res.status(500).json({ message: 'Erreur lors de la recherche', status: 'KO' });
         }
     }
 }

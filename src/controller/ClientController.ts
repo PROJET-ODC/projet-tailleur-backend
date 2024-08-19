@@ -47,6 +47,7 @@ class ClientController {
                     {status: 'PUBLIE'}
                 ]
             },
+            include: {tags:true}
         });
         //
         return myFollowersPost;
@@ -121,6 +122,7 @@ class ClientController {
                             { status: 'PUBLIE' }
                         ]
                     },
+                    include: {tags:true}
                 });
 
                 const myOwnStatus = await prisma.status.findMany({
@@ -203,48 +205,61 @@ class ClientController {
         }
     }
 
-    // // Rechercher dans l'accueil
-    // async accueilSearch(req: ControllerRequest, res: Response) {
-    //     try {
-    //         const { searchText } = req.body;
-    //         const regex = new RegExp(searchText, 'i');
-    //
-    //         const users = await prisma.user.findMany({
-    //             where: {
-    //                 OR: [
-    //                     { lastname: { contains: searchText, mode: 'insensitive' } },
-    //                     { firstname: { contains: searchText, mode: 'insensitive' } }
-    //                 ]
-    //             }
-    //         });
-    //
-    //         const userIds = users.map(user => user.id);
-    //
-    //         const comptes = await prisma.compte.findMany({
-    //             where: {
-    //                 OR: [
-    //                     { userId: { in: userIds } },
-    //                     { identifiant: { contains: searchText, mode: 'insensitive' } }
-    //                 ],
-    //                 etat: 'active'
-    //             }
-    //         });
-    //
-    //         const posts = await prisma.post.findMany({
-    //             where: {
-    //                 OR: [
-    //                     { content: { contains: searchText, mode: 'insensitive' } },
-    //                     { title: { contains: searchText, mode: 'insensitive' } }
-    //                 ]
-    //             }
-    //         });
-    //
-    //         return res.json({ comptes, posts, message: 'Résultats de la recherche', status: 'OK' });
-    //     } catch (error) {
-    //         return res.status(500).json({ message: 'Erreur lors de la recherche', status: 'KO' });
-    //     }
-    // }
-    //
+    // Rechercher dans l'accueil
+    async accueilSearch(req: ControllerRequest, res: Response) {
+        try {
+            const { searchText } = req.body;
+            const regex = new RegExp(searchText, 'i');
+
+            const users = await prisma.user.findMany({
+                where: {
+                    OR: [
+                        { lastname: { contains: searchText } },
+                        { firstname: { contains: searchText,} }
+                    ]
+                }
+            });
+
+
+            const userIds = users.map(user => user.id);
+
+            const comptes = await prisma.compte.findMany({
+                where: {
+                    OR: [
+                        { user_id: { in: userIds } },
+                        { identifiant: { contains: searchText} }
+                    ],
+                    etat: 'active'
+                }
+            });
+
+            const posts = await prisma.post.findMany({
+                where: {
+                    OR: [
+                        {
+                            content: { contains: searchText }
+                        },
+                        {
+                            title: { contains: searchText }
+                        },
+                        {
+                            tags: {
+                                some: {
+                                    libelle: { contains: searchText }
+                                }
+                            }
+                        }
+                    ]
+                },
+                include: {tags: true}
+            });
+
+            return res.json({ comptes, posts, message: 'Résultats de la recherche', status: 'OK' });
+        } catch (error) {
+            return res.status(500).json({ message: 'Erreur lors de la recherche', status: 'KO' });
+        }
+    }
+
     // async getPostById(req: ControllerRequest, res: Response) {
     //     try {
     //         const postId = req.params.id;
