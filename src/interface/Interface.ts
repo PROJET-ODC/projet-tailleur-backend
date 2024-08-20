@@ -10,4 +10,5 @@ export interface AuthenticatedRequest extends Request {
 
 export interface ControllerRequest extends Request {
     id?: string;
+    
 }

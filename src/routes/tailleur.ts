@@ -20,4 +20,4 @@ router.route('/approvisions/payereste').post(tailleurController.payerResteComman
 router.route('/approvisions/details').get(tailleurController.detailsApprovisions);
 
 export {router};
-//
+
