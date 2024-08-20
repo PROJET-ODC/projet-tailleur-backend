@@ -11,10 +11,6 @@ import yamljs from "yamljs";
 import path from "path";
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
-
-
-const secret = crypto.randomBytes(64).toString('hex');
-console.log(secret);
 const app = express();
 
 cloudinary.config({

@@ -1,5 +1,5 @@
-// @ts-nocheck
-import { v2 as cloudinary } from "cloudinary";
+
+import {v2 as cloudinary} from 'cloudinary'
 import fs from "fs";
 import { PrismaClient } from "@prisma/client";
 import { Response } from "express";
@@ -8,64 +8,15 @@ import { ControllerRequest } from "../interface/Interface";
 const prisma = new PrismaClient();
 
 class TailleurController {
+  
   constructor() {
-    // for (const key of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
-    //     const val = this[key];
-    //     if (key !== 'constructor' && typeof val === 'function') {
-    //         this[key] = val.bind(this);
-    //     }
-    // }
-  }
-
-  // // Function to list all posts of the logged-in user (tailor or client)
-  // async listMyAllPosts(req: ControllerRequest, res: Response) {
-  //     try {
-  //         const {tailleurId} = req.params;
-
-  //         // Validate ID
-  //         const account = await prisma.compte.findUnique({
-  //             where: {id: tailleurId},
-  //             include: {user: true},
-  //         });
-
-  //         if (!account) {
-  //             return res.status(404).json({message: 'Compte introuvable', status: 'KO'});
-  //         }
-
-  //         const userType = account.user?.type;
-  //         let statuses = [];
-
-  //         if (userType === 'client') {
-  //             const tailleursSuivis = account.follower_ids.map(follower => follower._id);
-  //             statuses = await prisma.status.findMany({
-  //                 where: {
-  //                     tailleurId: {in: tailleursSuivis},
-  //                     tailleur: {compte: {isActive: true}},
-  //                 },
-  //                 include: {tailleur: true},
-  //             });
-  //         } else if (userType === 'tailleur') {
-  //             const tailleursSuivis = account.follower_ids.map(follower => follower._id);
-  //             statuses = await prisma.status.findMany({
-  //                 where: {
-  //                     OR: [
-  //                         {tailleurId: {in: tailleursSuivis}, tailleur: {compte: {isActive: true}}},
-  //                         {tailleurId: tailleurId},
-  //                     ],
-  //                 },
-  //                 include: {tailleur: true},
-  //             });
-  //         }
-
-  //         if (statuses.length === 0) {
-  //             return res.status(404).json({message: 'Aucun post trouvé', status: 'KO'});
-  //         }
-
-  //         res.status(200).json({statuses, status: 'OK'});
-  //     } catch (err) {
-  //         return res.status(500).json({message: err.message, status: 'KO'});
-  //     }
-  // }
+        for (const key of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
+            const val = (this as any)[key];
+            if (key !== 'constructor' && typeof val === 'function') {
+                (this as any)[key] = val.bind(this);
+            }
+         }
+    }
 
   // Function to create a new status
   async createStatus(req: ControllerRequest, res: Response) {
@@ -92,59 +43,6 @@ class TailleurController {
           res.status(500).json({message: error.message, status: 'KO'});
       }
   }
-
-  // Function to list active statuses
-  // async listStatus(req: ControllerRequest, res: Response) {
-  //     try {
-  //         const userId = req.id;
-  //         const now = new Date();
-
-  //         const account = await prisma.compte.findUnique({
-  //             where: {id: userId},
-  //             include: {follower_ids: true},
-  //         });
-
-  //         if (!account) {
-  //             return res.status(404).json({message: 'Compte introuvable', status: 'KO'});
-  //         }
-
-  //         const userType = account.role;
-  //         let statuses = [];
-
-  //         if (userType === 'client') {
-  //             const tailleursSuivis = account.follower_ids.map(follower => follower._id);
-  //             statuses = await prisma.status.findMany({
-  //                 where: {tailleurId: {in: tailleursSuivis}},
-  //                 include: {tailleur: true},
-  //             });
-  //         } else if (userType === 'tailleur') {
-  //             const tailleursSuivis = account.follower_ids.map(follower => follower._id);
-  //             statuses = await prisma.status.findMany({
-  //                 where: {
-  //                     OR: [
-  //                         {tailleurId: {in: tailleursSuivis}},
-  //                         {tailleurId: userId},
-  //                     ],
-  //                 },
-  //                 include: {tailleur: true},
-  //             });
-  //         }
-
-  //         const activeStatuses = statuses.filter(status => {
-  //             const createdAt = new Date(status.createdAt);
-  //             const durationInSeconds = status.duration * 60;
-  //             const differenceInSeconds = (now.getTime() - createdAt.getTime()) / 1000;
-
-  //             return differenceInSeconds <= durationInSeconds && differenceInSeconds <= 86400;
-  //         });
-
-  //         console.log('Statuts actifs:', activeStatuses);
-
-  //         return res.status(200).json({statuses: activeStatuses, status: 'OK'});
-  //     } catch (err) {
-  //         return res.status(500).json({message: err.message, status: 'oooKO'});
-  //     }
-  // }
 
   async createPost(req: ControllerRequest, res: Response) {
     try {
@@ -245,39 +143,81 @@ class TailleurController {
           });
         }
       } else {
-        if (req.files.length > 1) {
-          return res.json({
-            message:
-              "Vous ne pouvez poster plus de 1 file pour le moment, utilisez vos crédits",
-            status: "KO",
-          });
+          if (req.files.length > 1) {
+            return res.json({
+              message:
+                "Vous ne pouvez poster plus de 1 file pour le moment, utilisez vos crédits",
+              status: "KO",
+            });
+          }
         }
+    }catch (error) {
+            if(error instanceof Error) {
+                console.error('Erreur lors de l\'achat de crédits:', error);
+                return res.status(500).json({
+                    error: 'Une erreur est survenue lors de l\'achat de crédits',
+                    details: error.message
+                });
+            }
+    }
+  }
+    async acheterCredit(req: ControllerRequest, res: Response){
+        try {
+            let {montant} = req.body;
+            const compteId = parseInt(req.id!);
+            // Validation du montant
+            if (typeof parseInt(montant) !== 'number' || montant <= 0) {
+                return res.status(400).json({error: 'Montant invalide'});
+            }
 
-        const newPost = await prisma.post.create({
-          data: {
-            content,
-            title,
-            files: fileNames, // Sauvegarder les chemins des fichiers Cloudinary
-            shareNb: 0,
-            viewNb: 0,
-            count: 2,
-            tailleur_id: tailleur.id,
-            categorie: req.body.categorie || null,
-            status: req.body.status || "draft",
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        });
+            // Calculer le crédit
+            const regleConversion = await prisma.conversionCredit.findFirst({
+                orderBy: {
+                    createdAt: 'desc', // Order by createdAt in descending order
+                },
+                take: 1, // Take the first record (which will be the one with the max date)
+            });
+            // console.log(regleConversion)
+            if (!regleConversion) {
+                return res.status(500).json({error: 'Règle de conversion non trouvée'});
+            }
+            montant = parseInt(montant);
+            let c = regleConversion.credit as number;
+            let p = regleConversion.prix.toNumber();
+            const credit = (montant * c) / p;
 
-        return res.status(201).json({
-          message: "Post created successfully",
-          status: "OK",
-          post: newPost,
-        });
-      }
-    } catch (err) {
-      console.error(err);
-      return res.status(500).json({ message: err.message, status: "KO" });
+            // Trouver le compte
+            const compte = await prisma.compte.findUnique({
+                where: {id: compteId},
+            });
+
+            if (!compte) {
+                return res.status(404).json({error: 'Compte non trouvé'});
+            }
+
+            // Vérifier si le compte est un "tailleur"
+            if (compte.role !== 'tailleur') {
+                return res.status(403).json({error: 'Seul un tailleur peut acheter des crédits'});
+            }
+
+            // Ajouter le crédit au crédit existant
+            const updatedCompte = await prisma.compte.update({
+                where: {id: compteId},
+                data: {credit: credit + compte.credit},
+            });
+
+            // Envoyer la réponse
+            return res.status(200).json({message: 'Crédit ajouté avec succès', compte: updatedCompte});
+        } catch (error) {
+            if(error instanceof Error) {
+                console.error('Erreur lors de l\'achat de crédits:', error);
+                return res.status(500).json({
+                    error: 'Une erreur est survenue lors de l\'achat de crédits',
+                    details: error.message
+                });
+            }
+        }
+        
     }
   }
 //for update
@@ -313,25 +253,7 @@ async updatePost(req: ControllerRequest, res: Response) {
           }
       });
 
-      // Mettre à jour les tissus
-      // if (tissus && Array.isArray(tissus)) {
-      //     // Supprimer les anciens tissus
-      //     await prisma.tissuPost.deleteMany({ where: { post_id: postId } });
-
-      //     // Ajouter les nouveaux tissus
-      //     await prisma.$transaction(
-      //         tissus.map(tissu => 
-      //             prisma.tissuPost.create({
-      //                 data: {
-      //                     prixMetre: tissu.prixMetre,
-      //                     nombreMetre: tissu.nombreMetre,
-      //                     post_id: postId,
-      //                     tissu_id: tissu.tissu_id
-      //                 }
-      //             })
-      //         )
-      //     );
-      // }
+      
 
       return res.status(200).json({ message: "Post updated successfully", status: 'OK', post: updatedPost });
   } catch (err) {
@@ -370,80 +292,35 @@ async deletePost(req: ControllerRequest, res: Response){
   }
 }
  
-  // async acheterCredit(req: ControllerRequest, res: Response){
-  //     try {
-  //         const {compteId, montant} = req.body;
+  
+    async getArticleCategories (req: ControllerRequest, res: Response){
 
-  //         // Validation du montant
-  //         if (typeof montant !== 'number' || montant <= 0) {
-  //             return res.status(400).json({error: 'Montant invalide'});
-  //         }
+    }
 
-  //         // Calculer le crédit
-  //         const regleConversion = await prisma.conversionCredit.findFirst();
-  //         if (!regleConversion) {
-  //             return res.status(500).json({error: 'Règle de conversion non trouvée'});
-  //         }
-  //         const credit = (montant * regleConversion.credit) / regleConversion.prix;
+    async getAllArticles (req: ControllerRequest, res: Response){
 
-  //         // Trouver le compte
-  //         const compte = await prisma.compte.findUnique({
-  //             where: {id: compteId},
-  //         });
+    }
 
-  //         if (!compte) {
-  //             return res.status(404).json({error: 'Compte non trouvé'});
-  //         }
+    async getSomeArticle (req: ControllerRequest, res: Response){
 
-  //         // Vérifier si le compte est un "tailleur"
-  //         if (compte.role !== 'tailleur') {
-  //             return res.status(403).json({error: 'Seul un tailleur peut acheter des crédits'});
-  //         }
+    }
 
-  //         // Ajouter le crédit au crédit existant
-  //         const updatedCompte = await prisma.compte.update({
-  //             where: {id: compteId},
-  //             data: {credit: credit + compte.credit},
-  //         });
+    async getAllApprovisions (req: ControllerRequest, res: Response){
 
-  //         // Envoyer la réponse
-  //         return res.status(200).json({message: 'Crédit ajouté avec succès', compte: updatedCompte});
-  //     } catch (error) {
-  //         console.error('Erreur lors de l\'achat de crédits:', error);
-  //         return res.status(500).json({
-  //             error: 'Une erreur est survenue lors de l\'achat de crédits',
-  //             details: error.message
-  //         });
-  //     }
-  // }
+    }
 
-  // async uploadProductImage(req: ControllerRequest, res: Response, fieldName: string){
-  //     if (!req.files) {
-  //         return res.status(500).json({message: "No File Uploaded", status: "KO"});
-  //     }
+    async payerResteCommande (req: ControllerRequest, res: Response){
 
-  //     const productImage = req.files[fieldName];
-  //     if (!productImage || !productImage.mimetype.startsWith('image/')) {
-  //         return res.status(500).json({message: "Please Upload Image", status: "KO"});
-  //     }
+    }
 
-  //     const maxSize = 1024 * 1024;
-  //     if (productImage.size > maxSize) {
-  //         return res.status(500).json({message: "Please upload image smaller than 1MB", status: "KO"});
-  //     }
+    async detailsApprovisions (req: ControllerRequest, res: Response){
 
-  //     try {
-  //         const result = await cloudinary.uploader.upload(productImage.tempFilePath, {
-  //             use_filename: true,
-  //             folder: 'status',
-  //         });
-  //         fs.unlinkSync(productImage.tempFilePath);
-  //         return res.status(200).json({image: {src: result.secure_url}});
-  //     } catch (error) {
-  //         console.error('Error uploading image:', error);
-  //         return res.status(500).json({message: 'Error uploading image', status: 'KO'});
-  //     }
-  // }
+    }
+
+    async addApprovisions (req: ControllerRequest, res: Response){
+
+    }
+
 }
 
 export default new TailleurController();

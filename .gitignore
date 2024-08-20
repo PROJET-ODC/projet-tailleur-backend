@@ -6,3 +6,5 @@ dist/tmp/*
 .idea/*
 dist/seeds.js
 dist/playground-22.mongodb.js
+rama.client.js
+ramacontroller.js
