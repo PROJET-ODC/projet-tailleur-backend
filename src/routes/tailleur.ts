@@ -17,4 +17,4 @@ router.route('/posts/:postId').put(tailleurController.updatePost).delete(tailleu
 router.route('/achetercredit').post(tailleurController.acheterCredit);
 
 export {router};
-//
+
