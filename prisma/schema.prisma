@@ -27,6 +27,15 @@ model User {
   @@map("users")
 }
 
+model ConversionCredit {
+  id        Int      @id @default(autoincrement())
+  credit Int
+  prix Decimal @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  @@map("conversion_credits")
+}
+
 model Compte {
   id            Int            @id @default(autoincrement())
   email         String         @unique
@@ -47,7 +56,7 @@ model Compte {
   reporteds     Report[]       @relation("Reporteds")
   reporters     Report[]       @relation("Reporters")
   noteds        Note[]         @relation("Noteds")
-  noters        Note[]         @relation("Noters")
+  noters        Note[]        @relation("Noters")
   blockeds      Bloquer[]      @relation("Blockeds")
   blockers      Bloquer[]      @relation("Blockers")
   messageds     Message[]      @relation("Messageds")
@@ -69,6 +78,7 @@ model Tailleur {
   posts     Post[]
   status    Status[]
   commande  CommandeArticle[]
+  stock     Stock[]
   createdAt DateTime          @default(now())
   updatedAt DateTime          @default(now())
 
@@ -89,6 +99,13 @@ model Mesure {
   id        Int      @id @default(autoincrement())
   compte_id Int      @unique
   compte    Compte   @relation(fields: [compte_id], references: [id])
+  Epaule    Float?
+  Manche    Float?
+  Longueur  Float?
+  Poitrine  Float?
+  Fesse     Float?
+  Taille    Float?
+  Cou       Float?
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
 
@@ -189,7 +206,10 @@ model Status {
   tailleur    Tailleur @relation(fields: [tailleur_id], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now())
+
+  @@map("status")
 }
+
 
 model Post {
   id          Int           @id @default(autoincrement())
@@ -245,6 +265,8 @@ model CommentResponse {
   comment    Comment  @relation(fields: [comment_id], references: [id])
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now())
+
+  @@map("comment_responses")
 }
 
 model Favori {
@@ -297,7 +319,7 @@ model CommandeArticle {
   id              Int                     @id @default(autoincrement())
   etat            etatCommande
   numero          String
-  montantTotal    Decimal
+  montantTotal    Decimal                 @db.Decimal(10, 2)
   tailleur_id     Int
   tailleur        Tailleur                @relation(fields: [tailleur_id], references: [id])
   paiement        PaiementArticle[]
@@ -309,13 +331,17 @@ model CommandeArticle {
 }
 
 model Stock {
-  id         Int      @id @default(autoincrement())
-  prix       Decimal
-  qte        Int
-  article_id Int
-  article    Article  @relation(fields: [article_id], references: [id])
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now())
+
+  id          Int         @id @default(autoincrement())
+  prix        Decimal     @db.Decimal(10, 2)
+  qte         Int
+  article_id  Int
+  article     Article     @relation(fields: [article_id], references: [id])
+  tailleur_id Int
+  tailleur    Tailleur    @relation(fields: [tailleur_id], references: [id])
+  tissupost   TissuPost[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @default(now())
 
   @@map("stocks")
 }
@@ -323,7 +349,7 @@ model Stock {
 model DetailCommandeArticle {
   id          Int             @id @default(autoincrement())
   qte         Int
-  prix        Decimal
+  prix        Decimal         @db.Decimal(10, 2)
   article_id  Int
   article     Article         @relation(fields: [article_id], references: [id])
   commande_id Int
@@ -345,8 +371,6 @@ model Article {
   etat            etatArticle
   image           Json
   description     String
-  prix            Decimal
-  qte             Int
   slug            String                  @unique
   detailcommandes DetailCommandeArticle[]
   article_unite   ArticleUnite[]
@@ -376,7 +400,7 @@ model Unite {
 
 model PaiementArticle {
   id          Int             @id @default(autoincrement())
-  montant     Decimal
+  montant     Decimal         @db.Decimal(10, 2)
   commande_id Int
   commande    CommandeArticle @relation(fields: [commande_id], references: [id])
   createdAt   DateTime        @default(now())
@@ -388,6 +412,7 @@ model PaiementArticle {
 model ArticleUnite {
   id         Int      @id @default(autoincrement())
   prix       Int
+  qte        Int
   article_id Int
   article    Article  @relation(fields: [article_id], references: [id])
   unite_id   Int
@@ -422,6 +447,7 @@ model Vendeur {
 
 model Couleur {
   id              Int              @id @default(autoincrement())
+  libelle         String
   couleur_article CouleurArticle[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @default(now())
@@ -440,6 +466,76 @@ model CouleurArticle {
 
   @@map("couleur_articles")
 }
+
+
+model TissuPost {
+  id        Int      @id @default(autoincrement())
+  stock_id  Int
+  stock     Stock    @relation(fields: [stock_id], references: [id])
+  post_id   Int
+  post      Post     @relation(fields: [post_id], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("tissu_posts")
+}
+
+model Taille {
+  id         Int          @id @default(autoincrement())
+  libelle    String
+  qte        String
+  taillepost TaillePost[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @default(now())
+
+  @@map("tailles")
+}
+
+model TaillePost {
+  id        Int      @id @default(autoincrement())
+  taille_id Int
+  taille    Taille   @relation(fields: [taille_id], references: [id])
+  post_id   Int
+  post      Post     @relation(fields: [post_id], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("taille_posts")
+}
+
+model Commande {
+  id        Int        @id @default(autoincrement())
+  post_id   Int
+  post      Post       @relation(fields: [post_id], references: [id])
+  compte_id Int
+  compte    Compte     @relation(fields: [compte_id], references: [id])
+  paiement  Paiement[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @default(now())
+
+  @@map("commandes")
+}
+
+model Paiement {
+  id          Int      @id @default(autoincrement())
+  montant     Decimal  @db.Decimal(10, 2)
+  commande_id Int
+  commande    Commande @relation(fields: [commande_id], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+
+  @@map("paiements")
+}
+
+model ConversionCredit {
+  id        Int      @id @default(autoincrement())
+  credit Int
+  prix Decimal @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  @@map("conversion_credits")
+}
+
 
 // model X {
 //   id        Int      @id @default(autoincrement())
