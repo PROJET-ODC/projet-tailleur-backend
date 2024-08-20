@@ -543,9 +543,51 @@ class ClientController {
             }
         }
     }
-
-    // Afficher le profil de l'utilisateur
-    async userProfile(req: ControllerRequest, res: Response) {
+  
+  
+  
+   async ShareNb(req: ControllerRequest, res: Response) {
+                try {
+                    const postId = req.id;
+    
+                    const post = await prisma.post.update({
+                        where: { id: postId },
+                        data: { shareNb: { increment: 1 } },
+                        select: { shareNb: true },
+                    });
+    
+                    if (!post) {
+                        return res.status(404).json({ message: 'Post non trouvé après mise à jour', status: 'KO' });
+                    }
+    
+                    return res.status(200).json({ message: 'Partage réussi.', data: { shareNb: post.shareNb }, status: 'OK' });
+                } catch (error:any) {
+                    return res.status(500).json({ message: 'Erreur lors du partage.', error: error.message, status: 'KO' });
+                }
+    }
+    
+    async ViewsNb(req: ControllerRequest, res: Response) {
+        try {
+            const postId = req.id;
+    
+            const post = await prisma.post.update({
+                where: { id: postId },
+                data: { viewNb: { increment: 1 } },
+                select: { viewNb: true },
+            });
+    
+            return res.json({ message: 'Post Vu', status: 'OK', post });
+        } catch (error:any) {
+            // Vérifie si l'erreur est liée à l'absence du post
+            if (error.code === 'P2025') {
+                return res.status(404).json({ message: 'Post non trouvé', status: 'KO' });
+            }
+            return res.status(500).json({ message: error.message, status: 'KO' });
+        }
+    }
+  
+  
+    async createCommande(req: ControllerRequest, res: Response) {
         try {
             // const id = req.id;
             const id = parseInt(req.id as string, 10);

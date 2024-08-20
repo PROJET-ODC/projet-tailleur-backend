@@ -7,6 +7,13 @@ const router = express.Router();
 
 router.use(isAuthenticatedGlobal); // Utilisez le middleware pour toutes les routes
 
+// route pour enregistrer mesure
+router.route('/share').post(clientController.ShareNb);
+
+//Vue de posts
+router.route('/view').post(clientController.ViewsNb);
+// Faire une commande
+router.route('/commandes').post(clientController.createCommande);
 
 // Définir la route GET pour récupérer les notifications ///////////////////////
 router.route('/notifications').get(clientController.getNotificationsForUser);
