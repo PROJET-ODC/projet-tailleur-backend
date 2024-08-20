@@ -16,7 +16,6 @@ router.route('/profileUser').get(clientController.userProfile);
 // Route pour ajouter un like ou un dislike// Route pour ajouter un like//////////////////////////////////////
 router.route('/like').post(clientController.addLike);
 
-// Route pour ajouter un dislike /////////////////////////////////////////////////
 router.route('/dislike').post(clientController.addDislike);
 
 //send message

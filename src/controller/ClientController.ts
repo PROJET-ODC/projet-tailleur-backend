@@ -312,7 +312,7 @@ class ClientController {
 
 
             const messaged_id1 = parseInt(messaged_id);
-          
+
             // Vérifiez que tous les champs requis sont présents
             if (typeof messager_id !== 'number' || typeof messaged_id1 !== 'number' || typeof texte !== 'string') {
                 return res.status(400).json({ message: 'Les champs messager_id, messaged_id et texte sont requis et doivent être du bon type.', status: 'KO' });
@@ -336,6 +336,7 @@ class ClientController {
         }
     }
 
+.
     async blockCompte(req: Request, res: Response) {
 
         try {
