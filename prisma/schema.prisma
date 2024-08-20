@@ -90,6 +90,13 @@ model Mesure {
   id        Int      @id @default(autoincrement())
   compte_id Int      @unique
   compte    Compte   @relation(fields: [compte_id], references: [id])
+  Epaule    Float?
+  Manche    Float?
+  Longueur  Float?
+  Poitrine  Float?
+  Fesse     Float?
+  Taille    Float?
+  Cou       Float?
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
 
@@ -191,7 +198,10 @@ model Status {
   tailleur    Tailleur @relation(fields: [tailleur_id], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now())
+
+  @@map("status")
 }
+
 
 model Post {
   id          Int           @id @default(autoincrement())
@@ -456,6 +466,7 @@ model TissuPost {
   post      Post     @relation(fields: [post_id], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+
   @@map("tissu_posts")
 }
 
@@ -466,6 +477,7 @@ model Taille {
   taillepost TaillePost[]
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @default(now())
+
   @@map("tailles")
 }
 
@@ -477,6 +489,7 @@ model TaillePost {
   post      Post     @relation(fields: [post_id], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+
   @@map("taille_posts")
 }
 
@@ -489,6 +502,7 @@ model Commande {
   paiement  Paiement[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @default(now())
+
   @@map("commandes")
 }
 
@@ -499,6 +513,7 @@ model Paiement {
   commande    Commande @relation(fields: [commande_id], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now())
+
   @@map("paiements")
 }
 

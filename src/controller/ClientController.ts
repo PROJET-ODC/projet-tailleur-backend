@@ -862,27 +862,27 @@ class ClientController {
     async addMeasure(req: ControllerRequest, res: Response) {
         try {
             const { Epaule, Manche, Longueur, Poitrine, Fesse, Taille, Cou } = req.body;
-            const idCompte = req.user?.id;
+            const idCompte = req.id;
 
-            const newMeasure = await prisma.measure.create({
+            const newMeasure = await prisma.Mesure.create({
                 data: {
-                    Epaule,
-                    Manche,
-                    Longueur,
-                    Poitrine,
-                    Fesse,
-                    Taille,
-                    Cou,
-                    compteId: idCompte,
+                    Epaule: parseFloat(Epaule),
+                Manche: parseFloat(Manche),
+                Longueur: parseFloat(Longueur),
+                Poitrine: parseFloat(Poitrine),
+                Fesse: parseFloat(Fesse),
+                Taille: parseFloat(Taille),
+                Cou: parseFloat(Cou),
+                compte_id: idCompte,
                 },
             });
 
-            await prisma.client.update({
-                where: { compteId: idCompte },
-                data: { measureIds: { push: newMeasure.id } },
-            });
+            // await prisma.client.update({
+            //     where: { compte_id: idCompte },
+            //     data: { measureIds: { push: newMeasure.id } },
+            // });
 
-            res.status(201).json({ message: 'Measure added successfully', measure: newMeasure });
+            res.status(201).json({ message: 'Measure added successfully', data: newMeasure });
         } catch (error) {
             res.status(500).json({ message: 'Error adding measure', error: error.message });
         }
@@ -890,17 +890,18 @@ class ClientController {
 
     async addNote(req: ControllerRequest, res: Response) {
         try {
-            const { whoNoteId, notedId, rating } = req.body;
+            const { noter_id, noted_id,note} = req.body;
 
-            const note = await prisma.note.create({
+            const notes = await prisma.Note.create({
                 data: {
-                    whoNoteId,
-                    notedId,
-                    rating,
+                    noter_id: parseInt(noter_id, 10),
+                    noted_id: parseInt(noted_id, 10),
+                    note: note,  // Assurez-vous que la valeur est correcte
+                   
                 },
             });
 
-            return res.status(201).json({ message: 'Note ajoutée avec succès.', note });
+            return res.status(201).json({ message: 'Note ajoutée avec succès.', data:notes });
         } catch (error) {
             return res.status(500).json({ message: error.message });
         }
@@ -920,23 +921,23 @@ class ClientController {
         }
     }
 
-    async getClientMeasures(req: ControllerRequest, res: Response) {
-        try {
-            const userId = req.id;
+    // async getClientMeasures(req: ControllerRequest, res: Response) {
+    //     try {
+    //         const userId = req.id;
 
-            const measures = await prisma.measure.findMany({
-                where: { compteId: userId },
-            });
+    //         const measures = await prisma.Mesure.findMany({
+    //             where: { compte_id: userId },
+    //         });
 
-            if (!measures.length) {
-                return res.status(404).json({ message: 'Aucune mesure trouvée pour ce client', status: 'KO' });
-            }
+    //         if (!measures.length) {
+    //             return res.status(404).json({ message: 'Aucune mesure trouvée pour ce client', status: 'KO' });
+    //         }
 
-            return res.status(200).json(measures);
-        } catch (err) {
-            return res.status(500).json({ message: err.message, status: 'KO' });
-        }
-    }
+    //         return res.status(200).json(measures);
+    //     } catch (err) {
+    //         return res.status(500).json({ message: err.message, status: 'KO' });
+    //     }
+    // }
 
     async getPostById(req: ControllerRequest, res: Response) {
         try {

@@ -10,6 +10,9 @@ import swaggerUi from "swagger-ui-express";
 import yamljs from "yamljs";
 import path from "path";
 import { fileURLToPath } from 'url';
+import crypto from 'crypto';
+const secret = crypto.randomBytes(64).toString('hex');
+console.log(secret);
 const app = express();
 cloudinary.config({
     cloud_name: process.env.CLOUD_NAME,
@@ -21,6 +24,8 @@ const __dirname = path.dirname(__filename);
 const BASE_API = process.env.PREFIX_URI;
 const swaggerDocument = yamljs.load(path.join(__dirname, "..", 'swagger.yaml'));
 const PORT = process.env.PORT;
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_LIFETIME = process.env.JWT_LIFETIME;
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(fileUpload({ useTempFiles: true }));
@@ -31,4 +36,6 @@ app.use(`${BASE_API}/tailleur`, tailleurRoutes);
 app.use(`${BASE_API}/vendeur`, vendeurRoutes);
 app.listen(PORT, () => {
     console.log(`Server is listening on port ${PORT}`);
+    console.log(`JWT secret: ${JWT_SECRET}`);
+    console.log(`JWT lifetime: ${JWT_LIFETIME}`);
 });
