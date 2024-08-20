@@ -8,6 +8,16 @@ const router = express.Router();
 router.use(isAuthenticatedGlobal); // Utilisez le middleware pour toutes les routes
 
 
+// Définir la route GET pour récupérer les notifications ///////////////////////
+router.route('/notifications').get(clientController.getNotificationsForUser);
+// Route pour ajouter un like ou un dislike// Route pour ajouter un like//////////////////////////////////////
+router.route('/like').post(clientController.addLike);
+
+router.route('/dislike').post(clientController.addDislike);
+
+//send message
+router.route('/sendMessage').post(clientController.sendMessage);
+
 
 router.route('/favorites').get(clientController.getAllFavorites);
 router.route('/favorites/add').post(clientController.addFavorite);
@@ -15,14 +25,6 @@ router.route('/favorites/add').post(clientController.addFavorite);
 
  router.route('/compte/report').post(clientController.signaler);
 // // Route pour obtenir tous les messages d'un client (utilisateur)
- router.route('/messages').get(clientController.getAllMessages).post(clientController.sendMessage);
-
-// // Route pour ajouter un like ou un dislike// Route pour ajouter un like
- router.route('/like').post(clientController.addLike);
-
-// // Route pour ajouter un dislike
- router.route('/dislike').post(clientController.addDislike);
-
 router.route('/posts/comment').post(clientController.ajoutComment).delete(clientController.deleteComment)
 
  router.route('/posts/comment/reponse').post(clientController.reponseComment).delete(clientController.deleteResponseComment);

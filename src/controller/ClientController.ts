@@ -1,7 +1,5 @@
 import { Favori, Comment, CommentResponse, Post, Report, Compte } from '@prisma/client';
 import { PrismaClient } from '@prisma/client';
-
-import { Request, Response } from 'express';
 import { ControllerRequest } from "../interface/Interface.js";
 
 const prisma = new PrismaClient();
@@ -14,6 +12,164 @@ class ClientController {
             if (key !== 'constructor' && typeof val === 'function') {
                 (this as any)[key] = val.bind(this);
             }
+        }
+    }
+  
+    // Ajouter un like$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+    async addLike(req, res) {
+        try {
+            const postId = parseInt(req.body.postId);
+            const compteId = parseInt(req.body.compteId);
+
+            // Vérifie si un like/dislike existe déjà pour ce post et ce compte
+            const existingLike = await prisma.like.findFirst({
+                where: { post_id: postId, compte_id: compteId }
+            });
+
+            if (existingLike) {
+                if (existingLike.etat === 'LIKE') {
+                    // Si l'état est LIKE, supprimer le like
+                    await prisma.like.delete({
+                        where: { id: existingLike.id }
+                    });
+
+                    return res.status(200).json({
+                        message: 'Like supprimé avec succès',
+                        status: 'OK'
+                    });
+                } else if (existingLike.etat === 'DISLIKE') {
+                    // Si l'état est DISLIKE, le mettre à jour en LIKE
+                    const updatedLike = await prisma.like.update({
+                        where: { id: existingLike.id },
+                        data: { etat: 'LIKE', updatedAt: new Date() }
+                    });
+
+                    return res.status(200).json({
+                        message: 'État changé de dislike à like',
+                        data: updatedLike,
+                        status: 'OK'
+                    });
+                }
+            } else {
+                // Crée un nouveau like si aucun n'existe
+                const newLike = await prisma.like.create({
+                    data: {
+                        post_id: postId,
+                        compte_id: compteId,
+                        etat: 'LIKE',
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    }
+                });
+
+                return res.status(201).json({ message: 'Like ajouté avec succès', data: newLike, status: 'OK' });
+            }
+        } catch (err) {
+            return res.status(500).json({ message: err.message, status: 'KO' });
+        }
+    }
+
+
+    // Ajouter un dislike$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+    async addDislike(req, res) {
+        try {
+            const postId = parseInt(req.body.postId);
+            const compteId = parseInt(req.body.compteId);
+
+            const existingDislike = await prisma.like.findFirst({
+                where: { post_id: postId, compte_id: compteId }
+            });
+
+            if (existingDislike) {
+                if (existingDislike.etat === 'DISLIKE') {
+                    await prisma.like.delete({
+                        where: { id: existingDislike.id }
+                    });
+
+                    return res.status(200).json({
+                        message: 'Dislike supprimé avec succès',
+                        status: 'OK'
+                    });
+                } else if (existingDislike.etat === 'LIKE') {
+                    await prisma.like.update({
+                        where: { id: existingDislike.id },
+                        data: { etat: 'DISLIKE', updatedAt: new Date() }
+                    });
+
+                    return res.status(200).json({
+                        message: 'État changé de like à dislike',
+                        data: existingDislike,
+                        status: 'OK'
+                    });
+                }
+            } else {
+                const newDislike = await prisma.like.create({
+                    data: {
+                        post_id: postId,
+                        compte_id: compteId,
+                        etat: 'DISLIKE',
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    }
+                });
+
+                return res.status(201).json({ message: 'Dislike ajouté avec succès', data: newDislike, status: 'OK' });
+            }
+        } catch (err) {
+            return res.status(500).json({ message: err.message, status: 'KO' });
+        }
+    }
+   
+
+    // $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+    async getNotificationsForUser(req: ControllerRequest, res: Response) {
+        const userId = req.id;
+
+        try {
+            const notifications = await prisma.notification.findMany({
+                where: { compte_id: userId },  // Utilisation du champ correct `compte_id`
+            });
+
+            return res.status(200).json({ notifications, message: 'Notifications chargées.', status: 'OK' });
+        } catch (error) {
+            return res.status(500).json({ message: error.message, status: 'KO' });
+        }
+    }
+
+
+    async sendMessage(req: Request, res: Response) {
+        try {
+            const { messaged_id, texte } = req.body;
+            const messager_id = parseInt(req.id);  // Obtenez l'ID du client connecté depuis la requête `req.id`
+            // Utilisation du champ correct `id` du client connecté
+
+            console.log(typeof (messager_id));
+            console.log((messaged_id));
+            console.log((texte));
+
+
+            const messaged_id1 = parseInt(messaged_id);
+
+            // Vérifiez que tous les champs requis sont présents
+            if (typeof messager_id !== 'number' || typeof messaged_id1 !== 'number' || typeof texte !== 'string') {
+                return res.status(400).json({ message: 'Les champs messager_id, messaged_id et texte sont requis et doivent être du bon type.', status: 'KO' });
+            }
+
+            // Créez un nouveau message
+            const newMessage = await prisma.message.create({
+                data: {
+                    messager_id,
+                    messaged_id: messaged_id1,
+                    texte,
+                  },
+            });
+
+            console.log(newMessage);
+
+            res.status(201).json({ message: 'Message envoyé', status: newMessage });
+        } catch (error) {
+            console.error('Erreur lors de l\'envoi du message:', error);
+            res.status(500).json({ message: error.message, status: 'KO' });
         }
     }
   
@@ -600,6 +756,7 @@ class ClientController {
         } catch (error: any) {
             return res.status(500).json({ message: 'Erreur lors de la suppression de la réponse de commentaire', status: 'KO' });
         }
+    }
 
     async getSomeProfile(req: ControllerRequest, res: Response) {
         const { identifiant } = req.params;
@@ -717,6 +874,5 @@ class ClientController {
     }
    
 }
-
 
 export default new ClientController();

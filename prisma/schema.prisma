@@ -65,7 +65,6 @@ model Compte {
   likes         Like[]
   favoris       Favori[]
   notifications Notification[]
-  commande      Commande[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @default(now())
 
@@ -183,7 +182,6 @@ model Message {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now())
 
-  @@unique([messager_id, messaged_id])
   @@map("messages")
 }
 
@@ -229,9 +227,6 @@ model Post {
   comments    Comment[]
   favoris     Favori[]
   likes       Like[]
-  tissupost   TissuPost[]
-  taillepost  TaillePost[]
-  commande    Commande[]
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @default(now())
 
@@ -289,7 +284,6 @@ model Favori {
 enum etatLike {
   LIKE
   DISLIKE
-  UNLIKE
 }
 
 model Like {
@@ -337,6 +331,7 @@ model CommandeArticle {
 }
 
 model Stock {
+
   id          Int         @id @default(autoincrement())
   prix        Decimal     @db.Decimal(10, 2)
   qte         Int
@@ -472,6 +467,7 @@ model CouleurArticle {
   @@map("couleur_articles")
 }
 
+
 model TissuPost {
   id        Int      @id @default(autoincrement())
   stock_id  Int
@@ -539,6 +535,7 @@ model ConversionCredit {
   updatedAt DateTime @default(now())
   @@map("conversion_credits")
 }
+
 
 // model X {
 //   id        Int      @id @default(autoincrement())
