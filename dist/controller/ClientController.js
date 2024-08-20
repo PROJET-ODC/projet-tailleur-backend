@@ -1,349 +1,86 @@
 import { PrismaClient } from '@prisma/client';
-import { createJWT } from '../utils/jwt.js';
+import jwt from 'jsonwebtoken';
 const prisma = new PrismaClient();
 class ClientController {
     constructor() {
     }
-    async getMyFollowersPost(compteId) {
-        const myFollowers = await prisma.follow.findMany({
-            where: {
-                followerId: compteId,
-            },
-            include: {
-                followed: true,
-            },
-        });
-        const myFollowersCompte = myFollowers
-            .filter(follow => follow.followed?.etat === 'active')
-            .map(follow => follow.followedId);
-        const myFollowersTailleur = await prisma.tailleur.findMany({
-            where: {
-                compteId: { in: myFollowersCompte },
-            },
-        });
-        const myFollowersTailleurIds = myFollowersTailleur.map(tailleur => tailleur.id);
-        const myFollowersPost = await prisma.post.findMany({
-            where: {
-                authorId: { in: myFollowersTailleurIds },
-            },
-        });
-        return myFollowersPost;
-    }
-    async getMyFollowersRecentStatus(compteId) {
-        const now = Date.now();
-        const twentyFourHoursInMs = 24 * 60 * 60 * 1000;
-        const myFollowers = await prisma.follow.findMany({
-            where: {
-                followerId: compteId,
-            },
-            include: {
-                followed: true,
-            },
-        });
-        const myFollowersCompte = myFollowers
-            .filter(follow => follow.followed?.etat === 'active')
-            .map(follow => follow.followedId);
-        const myFollowersTailleur = await prisma.tailleur.findMany({
-            where: {
-                compteId: { in: myFollowersCompte },
-            },
-        });
-        const myFollowersTailleurIds = myFollowersTailleur.map(tailleur => tailleur.id);
-        const myFollowersStatus = await prisma.status.findMany({
-            where: {
-                tailleurId: { in: myFollowersTailleurIds },
-            },
-        });
-        const myFollowersRecentStatus = myFollowersStatus.filter(status => {
-            const createdAtMs = new Date(status.createdAt).getTime();
-            const differenceInMs = now - createdAtMs;
-            return differenceInMs <= twentyFourHoursInMs;
-        });
-        return myFollowersRecentStatus;
-    }
-    async createAccount(req, res) {
-        try {
-            const newAccount = await prisma.compte.create({
-                data: {
-                    ...req.body,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                },
-            });
-            const token = createJWT({ payload: { id: newAccount.id, role: newAccount.role } });
-            return res.status(201).json({ account: newAccount, token, status: 'OK' });
-        }
-        catch (err) {
-            return res.status(500).json({ message: err.message, status: 'KO' });
-        }
-    }
-    async getNewsFeed(req, res) {
-        const compteId = req.id;
-        const now = Date.now();
-        const twentyFourHoursInMs = 24 * 60 * 60 * 1000;
-        try {
-            const compte = await prisma.compte.findUnique({
-                where: { id: compteId },
-            });
-            if (!compte) {
-                return res.status(404).json({ message: 'Compte non trouvé', status: 'KO' });
-            }
-            if (compte.role === 'tailleur') {
-                const oneDayAgo = new Date(Date.now() - twentyFourHoursInMs);
-                const tailleur = await prisma.tailleur.findUnique({
-                    where: { compteId },
-                });
-                const myOwnPost = await prisma.post.findMany({
-                    where: { authorId: tailleur?.id },
-                });
-                const myOwnStatus = await prisma.status.findMany({
-                    where: { tailleurId: tailleur?.id },
-                });
-                const myOwnRecentStatus = myOwnStatus.filter(status => {
-                    const createdAtMs = new Date(status.createdAt).getTime();
-                    const differenceInMs = now - createdAtMs;
-                    return differenceInMs <= twentyFourHoursInMs;
-                });
-                const myFollowersPost = await this.getMyFollowersPost(compteId);
-                const posts = myOwnPost.concat(myFollowersPost);
-                const myFollowersRecentStatus = await this.getMyFollowersRecentStatus(compteId);
-                const recentStatus = myFollowersRecentStatus.concat(myOwnRecentStatus);
-                return res.json({ posts, recentStatus, message: 'Fil d\'actualité chargé', status: 'OK' });
-            }
-            else {
-                const posts = await this.getMyFollowersPost(compteId);
-                const recentStatus = await this.getMyFollowersRecentStatus(compteId);
-                return res.json({ posts, recentStatus, message: 'Fil d\'actualité chargé', status: 'OK' });
-            }
-        }
-        catch (err) {
-            return res.status(500).json({ message: err.message, status: 'KO' });
-        }
-    }
-    async getAccount(req, res) {
-        try {
-            const account = await prisma.compte.findUnique({
-                where: { id: req.params.id },
-                include: {
-                    user: true,
-                    comments: true,
-                    favorites: true,
-                    followers: true,
-                    reports: true,
-                    notes: true,
-                },
-            });
-            if (!account) {
-                return res.status(404).json({ message: 'Compte non trouvé', status: 'KO' });
-            }
-            return res.status(200).json({ account, status: 'OK' });
-        }
-        catch (err) {
-            return res.status(500).json({ message: err.message, status: 'KO' });
-        }
-    }
-    async getNotificationById(req, res) {
-        try {
-            const notification = await prisma.notification.findUnique({
-                where: { id: req.params.id },
-                include: { post: true },
-            });
-            if (!notification) {
-                return res.status(404).json({ message: 'Notification non trouvée', status: 'KO' });
-            }
-            return res.status(200).json({ notification, status: 'OK' });
-        }
-        catch (err) {
-            return res.status(500).json({ message: err.message, status: 'KO' });
-        }
-    }
-    async getMessageById(req, res) {
-        try {
-            const message = await prisma.message.findUnique({
-                where: { id: req.params.id },
-                include: { sender: true },
-            });
-            if (!message) {
-                return res.status(404).json({ message: 'Message non trouvé', status: 'KO' });
-            }
-            return res.status(200).json({ message, status: 'OK' });
-        }
-        catch (err) {
-            return res.status(500).json({ message: err.message, status: 'KO' });
-        }
-    }
-    async getFavoriteById(req, res) {
-        try {
-            const favorite = await prisma.favorite.findUnique({
-                where: { id: req.params.id },
-                include: { post: true },
-            });
-            if (!favorite) {
-                return res.status(404).json({ message: 'Favori non trouvé', status: 'KO' });
-            }
-            return res.status(200).json({ favorite, status: 'OK' });
-        }
-        catch (err) {
-            return res.status(500).json({ message: err.message, status: 'KO' });
-        }
-    }
-    async listFavorites(req, res) {
-        try {
-            const favorites = await prisma.favorite.findMany({
-                where: { compteId: req.user.id },
-                include: { post: true },
-            });
-            return res.status(200).json({ favorites, status: 'OK' });
-        }
-        catch (err) {
-            return res.status(500).json({ message: err.message, status: 'KO' });
-        }
-    }
-    async addFavorite(req, res) {
-        try {
-            const { postId } = req.body;
-            const compteId = req.user.id;
-            const newFavorite = await prisma.favorite.create({
-                data: {
-                    postId,
-                    compteId,
-                    createdAt: new Date(),
-                },
-            });
-            return res.status(201).json({ favorite: newFavorite, status: 'OK' });
-        }
-        catch (err) {
-            return res.status(500).json({ message: err.message, status: 'KO' });
-        }
-    }
-    async getAllFavorites(req, res) {
-        try {
-            const id = req.id;
-            if (!id || !prisma.$id(id)) {
-                return res.status(400).json({ message: 'ID utilisateur invalide' });
-            }
-            const user = await prisma.compte.findUnique({
-                where: { id },
-            });
-            if (!user) {
-                return res.status(404).json({ message: 'Utilisateur non trouvé' });
-            }
-            const favorites = await prisma.favorite.findMany({
-                where: { compteId: user.id },
-            });
-            return res.status(200).json(favorites);
-        }
-        catch (error) {
-            return res.status(500).json({
-                message: 'Erreur lors de la récupération des favoris',
-                status: 'KO',
-                error: error.message,
-            });
-        }
-    }
-    async deleteFavorite(req, res) {
-        try {
-            const { favorite_id } = req.body;
-            const compte_id = req.id;
-            if (!compte_id || !favorite_id) {
-                return res.status(400).json({ message: 'ID du compte ou ID du favori invalide' });
-            }
-            const result = await prisma.favorite.deleteMany({
-                where: {
-                    compte_id,
-                    id: favorite_id
-                }
-            });
-            if (result.count === 0) {
-                return res.status(404).json({ message: 'Favori non trouvé ou déjà supprimé' });
-            }
-            return res.status(200).json({ message: 'Favori supprimé avec succès' });
-        }
-        catch (error) {
-            return res.status(500).json({
-                message: 'Erreur lors de la suppression du favori',
-                status: 'KO',
-                error: error.message
-            });
-        }
-    }
-    async signaler(req, res) {
-        try {
-            const { id, motif } = req.body;
-            if (!id) {
-                return res.status(400).json({ message: 'ID utilisateur invalide' });
-            }
-            const compte = await prisma.compte.findUnique({ where: { id } });
-            if (!compte) {
-                return res.status(404).json({ message: 'Compte non trouvé' });
-            }
-            const rapport = await prisma.report.create({
-                data: {
-                    compteId: id,
-                    motif,
-                    userId: req.id,
-                }
-            });
-            return res.status(201).json({ message: 'Compte signalé avec succès', rapport });
-        }
-        catch (error) {
-            return res.status(500).json({
-                message: 'Erreur lors du signalement du compte',
-                status: 'KO',
-                error: error.message
-            });
-        }
-    }
     async showClientProfile(req, res) {
         try {
-            const idUser = req.id;
-            const compte = await prisma.compte.findUnique({ where: { id: idUser } });
+            const token = req.headers.authorization?.split(' ')[1];
+            if (!token) {
+                return res.status(401).json({ message: 'Token manquant', status: 'KO' });
+            }
+            const secretKey = process.env.JWT_SECRET || 'your-secret-key';
+            let decoded;
+            try {
+                decoded = jwt.verify(token, secretKey);
+                console.log("Decoded token:", decoded);
+            }
+            catch (error) {
+                console.error('Erreur de décodage du jeton:', error);
+                return res.status(401).json({ message: 'Token invalide', status: 'KO' });
+            }
+            if (!decoded || !decoded.id) {
+                console.error('ID utilisateur manquant dans le jeton');
+                return res.status(400).json({ message: 'ID utilisateur manquant', status: 'KO' });
+            }
+            const idUser = decoded.id;
+            console.log(`Fetching profile for user ID: ${idUser}`);
+            const compte = await prisma.compte.findUnique({
+                where: { id: idUser },
+                include: { user: true, followers: true, followeds: true }
+            });
+            console.log(compte);
             if (!compte) {
                 return res.status(404).json({ message: 'Compte non trouvé', status: 'KO' });
             }
-            const user = await prisma.user.findUnique({ where: { id: compte.userId } });
+            const user = compte.user;
             if (!user) {
                 return res.status(404).json({ message: 'Utilisateur non trouvé', status: 'KO' });
             }
             let posts = [];
             if (compte.role === 'tailleur') {
-                const tailleur = await prisma.tailleur.findUnique({ where: { compteId: compte.id } });
-                if (tailleur) {
+                let tailleur;
+                try {
+                    tailleur = await prisma.tailleur.findUnique({ where: { compte_id: compte.id } });
+                    if (!tailleur) {
+                        return res.status(404).json({ message: 'Tailleur non trouvé', status: 'KO' });
+                    }
                     posts = await prisma.post.findMany({
-                        where: { id: { in: tailleur.postIds } }
+                        where: { tailleur_id: tailleur.id }
                     });
                 }
-                else {
-                    throw new Error('Tailleur non trouvé');
+                catch (error) {
+                    console.error('Erreur lors de la recherche du tailleur:', error);
+                    return res.status(500).json({ message: 'Erreur lors de la recherche du tailleur', status: 'KO' });
                 }
             }
             else if (compte.role === 'client') {
-                const client = await prisma.client.findUnique({ where: { compteId: compte.id } });
-                if (client && client.followClientIds.length > 0) {
-                    const followClients = await prisma.followClient.findMany({
-                        where: { clientId: client.id }
-                    });
-                    const followedClientIds = followClients.map(follow => follow.followedClientId);
+                console.log("role", compte.role);
+                const client = await prisma.client.findUnique({
+                    where: { compte_id: compte.id },
+                    include: { followClients: true }
+                });
+                if (client && client.followClients.length > 0) {
+                    const followClients = client.followClients;
+                    const followedClientIds = followClients.map(follow => follow.followed_id);
                     const tailleurs = await prisma.tailleur.findMany({
-                        where: { compteId: { in: followedClientIds } }
+                        where: { compte_id: { in: followedClientIds } },
+                        include: { compte: true }
                     });
-                    const activeTailleurIds = [];
-                    for (const tailleur of tailleurs) {
-                        const compteSuivi = await prisma.compte.findUnique({ where: { id: tailleur.compteId } });
-                        if (compteSuivi && compteSuivi.etat === 'active') {
-                            activeTailleurIds.push(tailleur.id);
-                        }
-                    }
+                    const activeTailleurIds = tailleurs
+                        .filter(tailleur => tailleur.compte.etat === 'actif')
+                        .map(tailleur => tailleur.id);
                     posts = await prisma.post.findMany({
-                        where: { authorId: { in: activeTailleurIds } }
+                        where: { tailleur_id: { in: activeTailleurIds } }
                     });
                 }
             }
             else {
-                throw new Error('Role inconnu');
+                return res.status(400).json({ message: 'Role inconnu', status: 'KO' });
             }
             res.status(200).json({
-                compte: { role: compte.role, etat: compte.etat },
+                compte: { role: compte.role, etat: compte.etat, followers: compte.followers, followeds: compte.followeds },
                 user: {
                     lastname: user.lastname,
                     firstname: user.firstname,
@@ -359,96 +96,47 @@ class ClientController {
             res.status(500).json({ message: 'Erreur interne du serveur', status: 'KO' });
         }
     }
-    async getAllMessages(req, res) {
-        try {
-            const clientId = req.params.clientId || req.body.clientId || req.id;
-            if (!clientId) {
-                return res.status(400).json({ message: 'ID du client invalide', status: 'KO' });
-            }
-            const messages = await prisma.message.findMany({
-                where: {
-                    OR: [
-                        { senderId: clientId },
-                        { receiverId: clientId }
-                    ]
-                },
-                include: {
-                    sender: true,
-                    receiver: true
-                }
-            });
-            if (messages.length === 0) {
-                return res.status(404).json({ message: 'Aucun message trouvé', status: 'KO' });
-            }
-            res.status(200).json({ messages, status: 'OK' });
-        }
-        catch (err) {
-            return res.status(500).json({ message: err.message, status: 'KO' });
-        }
-    }
-    async sendMessage(req, res) {
-        try {
-            const senderId = req.params.senderId || req.body.senderId || req.id;
-            const receiverId = req.params.receiverId || req.body.receiverId || req.id;
-            const texte = req.params.texte || req.body.texte;
-            if (!senderId || !receiverId) {
-                return res.status(400).json({ message: 'ID de l’expéditeur ou du destinataire invalide', status: 'KO' });
-            }
-            const newMessage = await prisma.message.create({
-                data: {
-                    texte,
-                    senderId,
-                    receiverId,
-                    createdAt: new Date()
-                }
-            });
-            res.status(201).json({ message: 'Message envoyé avec succès', data: newMessage, status: 'OK' });
-        }
-        catch (err) {
-            console.error('Erreur lors de l\'envoi du message:', err);
-            return res.status(500).json({ message: err.message, status: 'KO' });
-        }
-    }
     async addLike(req, res) {
         try {
-            const { postId, compteId } = req.body;
+            const postId = parseInt(req.body.postId);
+            const compteId = parseInt(req.body.compteId);
             const existingLike = await prisma.like.findFirst({
-                where: { postId, compteId }
+                where: { post_id: postId, compte_id: compteId }
             });
             if (existingLike) {
-                if (existingLike.etat === 'like') {
-                    return res.status(400).json({ message: 'Le like est déjà enregistré', status: 'KO' });
-                }
-                else {
-                    await prisma.like.update({
-                        where: { id: existingLike.id },
-                        data: { etat: 'like', updatedAt: new Date() }
+                if (existingLike.etat === 'LIKE') {
+                    await prisma.like.delete({
+                        where: { id: existingLike.id }
                     });
-                    await prisma.post.update({
-                        where: { id: postId },
-                        data: { likeCount: { increment: 1 }, dislikeCount: { decrement: 1 } }
+                    return res.status(200).json({
+                        message: 'Like supprimé avec succès',
+                        status: 'OK'
+                    });
+                }
+                else if (existingLike.etat === 'DISLIKE') {
+                    const updatedLike = await prisma.like.update({
+                        where: { id: existingLike.id },
+                        data: { etat: 'LIKE', updatedAt: new Date() }
                     });
                     return res.status(200).json({
                         message: 'État changé de dislike à like',
-                        data: existingLike,
+                        data: updatedLike,
                         status: 'OK'
                     });
                 }
             }
-            const newLike = await prisma.like.create({
-                data: {
-                    postId,
-                    compteId,
-                    etat: 'like',
-                    createdAt: new Date(),
-                    updatedAt: new Date()
-                }
-            });
-            await prisma.post.update({
-                where: { id: postId },
-                data: { likeCount: { increment: 1 } }
-            });
-            res.status(201).json({ message: 'Like ajouté avec succès', data: newLike, status: 'OK' });
+            else {
+                const newLike = await prisma.like.create({
+                    data: {
+                        post_id: postId,
+                        compte_id: compteId,
+                        etat: 'LIKE',
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    }
+                });
+                return res.status(201).json({ message: 'Like ajouté avec succès', data: newLike, status: 'OK' });
+            }
         }
         catch (err) {
             return res.status(500).json({ message: err.message, status: 'KO' });
@@ -456,74 +144,45 @@ class ClientController {
     }
     async addDislike(req, res) {
         try {
-            const { postId, compteId } = req.body;
-            const existingLike = await prisma.like.findFirst({
-                where: { postId, compteId }
+            const postId = parseInt(req.body.postId);
+            const compteId = parseInt(req.body.compteId);
+            const existingDislike = await prisma.like.findFirst({
+                where: { post_id: postId, compte_id: compteId }
             });
-            if (existingLike) {
-                if (existingLike.etat === 'dislike') {
-                    return res.status(400).json({ message: 'Le dislike est déjà enregistré', status: 'KO' });
-                }
-                else {
-                    await prisma.like.update({
-                        where: { id: existingLike.id },
-                        data: { etat: 'dislike', updatedAt: new Date() }
+            if (existingDislike) {
+                if (existingDislike.etat === 'DISLIKE') {
+                    await prisma.like.delete({
+                        where: { id: existingDislike.id }
                     });
-                    await prisma.post.update({
-                        where: { id: postId },
-                        data: { dislikeCount: { increment: 1 }, likeCount: { decrement: 1 } }
+                    return res.status(200).json({
+                        message: 'Dislike supprimé avec succès',
+                        status: 'OK'
+                    });
+                }
+                else if (existingDislike.etat === 'LIKE') {
+                    await prisma.like.update({
+                        where: { id: existingDislike.id },
+                        data: { etat: 'DISLIKE', updatedAt: new Date() }
                     });
                     return res.status(200).json({
                         message: 'État changé de like à dislike',
-                        data: existingLike,
+                        data: existingDislike,
                         status: 'OK'
                     });
                 }
             }
-            const newDislike = await prisma.like.create({
-                data: {
-                    postId,
-                    compteId,
-                    etat: 'dislike',
-                    createdAt: new Date(),
-                    updatedAt: new Date()
-                }
-            });
-            await prisma.post.update({
-                where: { id: postId },
-                data: { dislikeCount: { increment: 1 } }
-            });
-            res.status(201).json({ message: 'Dislike ajouté avec succès', data: newDislike, status: 'OK' });
-        }
-        catch (err) {
-            return res.status(500).json({ message: err.message, status: 'KO' });
-        }
-    }
-    async removeLikeOrDislike(req, res) {
-        try {
-            const { postId, compteId, etat } = req.body;
-            if (!['like', 'dislike'].includes(etat)) {
-                return res.status(400).json({ message: 'État invalide', status: 'KO' });
-            }
-            const result = await prisma.like.deleteMany({
-                where: { postId, compteId, etat }
-            });
-            if (result.count === 0) {
-                return res.status(404).json({
-                    message: `${etat.charAt(0).toUpperCase() + etat.slice(1)} non trouvé`,
-                    status: 'KO'
+            else {
+                const newDislike = await prisma.like.create({
+                    data: {
+                        post_id: postId,
+                        compte_id: compteId,
+                        etat: 'DISLIKE',
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    }
                 });
+                return res.status(201).json({ message: 'Dislike ajouté avec succès', data: newDislike, status: 'OK' });
             }
-            const stateUpdate = {};
-            stateUpdate[`${etat}Count`] = -1;
-            await prisma.post.update({
-                where: { id: postId },
-                data: stateUpdate
-            });
-            res.status(200).json({
-                message: `${etat.charAt(0).toUpperCase() + etat.slice(1)} supprimé avec succès`,
-                status: 'OK'
-            });
         }
         catch (err) {
             return res.status(500).json({ message: err.message, status: 'KO' });
@@ -531,248 +190,51 @@ class ClientController {
     }
     async userProfile(req, res) {
         try {
-            const id = req.id;
-            const compte = await prisma.compte.findUnique({ where: { id } });
+            if (!req.body || typeof req.body !== 'object') {
+                return res.status(400).json({ message: 'Corps de requête invalide', status: 'KO' });
+            }
+            const { id } = req.body;
+            if (!id || typeof id !== 'string') {
+                return res.status(400).json({ message: 'ID utilisateur invalide', status: 'KO' });
+            }
+            const userId = parseInt(id, 10);
+            if (isNaN(userId)) {
+                return res.status(400).json({ message: 'ID utilisateur doit être un nombre', status: 'KO' });
+            }
+            const compte = await prisma.compte.findUnique({
+                where: { id: userId },
+                include: { user: true }
+            });
             if (!compte) {
                 return res.status(404).json({ message: 'Utilisateur non trouvé', status: 'KO' });
             }
-            return res.json({ compte, message: 'Le profil de l\'utilisateur', status: 'OK' });
+            return res.json({
+                compte: {
+                    id: compte.id,
+                    email: compte.email,
+                    role: compte.role,
+                    etat: compte.etat,
+                    user: compte.user ? {
+                        lastname: compte.user.lastname,
+                        firstname: compte.user.firstname,
+                        city: compte.user.city,
+                        picture: compte.user.picture
+                    } : null
+                },
+                message: 'Profil de l\'utilisateur récupéré avec succès',
+                status: 'OK'
+            });
         }
         catch (error) {
+            console.error('Erreur lors de la récupération du profil utilisateur:', error);
             return res.status(500).json({ message: 'Erreur interne du serveur', status: 'KO' });
-        }
-    }
-    async accueilSearch(req, res) {
-        try {
-            const { searchText } = req.body;
-            const regex = new RegExp(searchText, 'i');
-            const users = await prisma.user.findMany({
-                where: {
-                    OR: [
-                        { lastname: { contains: searchText, mode: 'insensitive' } },
-                        { firstname: { contains: searchText, mode: 'insensitive' } }
-                    ]
-                }
-            });
-            const userIds = users.map(user => user.id);
-            const comptes = await prisma.compte.findMany({
-                where: {
-                    OR: [
-                        { userId: { in: userIds } },
-                        { identifiant: { contains: searchText, mode: 'insensitive' } }
-                    ],
-                    etat: 'active'
-                }
-            });
-            const posts = await prisma.post.findMany({
-                where: {
-                    OR: [
-                        { content: { contains: searchText, mode: 'insensitive' } },
-                        { title: { contains: searchText, mode: 'insensitive' } }
-                    ]
-                }
-            });
-            return res.json({ comptes, posts, message: 'Résultats de la recherche', status: 'OK' });
-        }
-        catch (error) {
-            return res.status(500).json({ message: 'Erreur lors de la recherche', status: 'KO' });
-        }
-    }
-    async ajoutComment(req, res) {
-        const { content, idPost } = req.body;
-        const idCompte = req.id;
-        const newComment = await prisma.comment.create({
-            data: {
-                content,
-                compteId: idCompte,
-                postId: idPost,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            },
-        });
-        const post = await prisma.post.update({
-            where: { id: idPost },
-            data: {
-                commentIds: { push: newComment.id },
-                updatedAt: new Date(),
-            },
-        });
-        if (!post) {
-            return res.status(404).json({ message: 'Post non trouvé', status: 'KO' });
-        }
-        return res.json({ comment: newComment, message: 'Commentaire ajouté', status: 'OK' });
-    }
-    async reponseComment(req, res) {
-        const { content, idComment } = req.body;
-        const idCompte = req.id;
-        const newCommentResponse = await prisma.commentResponse.create({
-            data: {
-                texte: content,
-                compteId: idCompte,
-                commentId: idComment,
-                createdAt: new Date(),
-                updatedAt: new Date(),
-            },
-        });
-        const comment = await prisma.comment.update({
-            where: { id: idComment },
-            data: {
-                commentResponseIds: { push: newCommentResponse.id },
-                updatedAt: new Date(),
-            },
-        });
-        if (!comment) {
-            return res.status(404).json({ message: 'Commentaire non trouvé', status: 'KO' });
-        }
-        return res.json({ commentResponse: newCommentResponse, message: 'Réponse ajoutée', status: 'OK' });
-    }
-    async deleteComment(req, res) {
-        const { idComment } = req.body;
-        const idCompte = req.id;
-        const commentDelete = await prisma.comment.delete({
-            where: { id: idComment },
-        });
-        if (!commentDelete) {
-            return res.status(500).json({ message: 'Commentaire non trouvé', status: 'KO' });
-        }
-        return res.json({ message: 'Commentaire supprimé', status: 'OK' });
-    }
-    async deleteResponseComment(req, res) {
-        const { idCommentResponse } = req.body;
-        const commentResponse = await prisma.commentResponse.delete({
-            where: { id: idCommentResponse },
-        });
-        if (!commentResponse) {
-            return res.status(404).json({ message: 'Réponse de commentaire non trouvée', status: 'KO' });
-        }
-        return res.json({ message: 'Réponse de commentaire supprimée', status: 'OK' });
-    }
-    async ShareNb(req, res) {
-        try {
-            const { postId } = req.body;
-            const post = await prisma.post.update({
-                where: { id: postId },
-                data: { shareNb: { increment: 1 } },
-                select: { shareNb: true },
-            });
-            if (!post) {
-                return res.status(404).json({ message: 'Post non trouvé après mise à jour', status: 'KO' });
-            }
-            return res.status(200).json({ message: 'Partage réussi.', data: { shareNb: post.shareNb }, status: 'OK' });
-        }
-        catch (error) {
-            return res.status(500).json({ message: 'Erreur lors du partage.', error: error.message, status: 'KO' });
-        }
-    }
-    async ViewsNb(req, res) {
-        try {
-            const { postId } = req.body;
-            const post = await prisma.post.update({
-                where: { id: postId },
-                data: { viewsNb: { increment: 1 } },
-                select: { viewsNb: true },
-            });
-            if (!post) {
-                return res.status(404).json({ message: 'Post non trouvé après mise à jour', status: 'KO' });
-            }
-            return res.json({ message: 'Post Vu', status: 'OK' });
-        }
-        catch (error) {
-            return res.status(500).json({ message: error.message, status: 'KO' });
-        }
-    }
-    async createCommande(req, res) {
-        try {
-            const { tissuPostId, clientId } = req.body;
-            const newCommande = await prisma.commande.create({
-                data: {
-                    tissupostId: tissuPostId,
-                    clientId,
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                },
-            });
-            return res.status(201).json({ message: 'Commande créée avec succès', commande: newCommande, status: 'OK' });
-        }
-        catch (error) {
-            return res.status(500).json({ message: error.message, status: 'KO' });
-        }
-    }
-    async follow(req, res) {
-        const { idFollowedCompte } = req.body;
-        const idCompte = req.id;
-        const follow = await prisma.follow.create({
-            data: {
-                followedId: idFollowedCompte,
-                followerId: idCompte,
-            },
-        });
-        if (!follow) {
-            return res.status(500).json({ message: 'Le follow a échoué', status: 'KO' });
-        }
-        await prisma.compte.update({
-            where: { id: idFollowedCompte },
-            data: {
-                followerIds: { push: follow.id },
-                updatedAt: new Date(),
-            },
-        });
-        await prisma.compte.update({
-            where: { id: idCompte },
-            data: {
-                followerIds: { push: follow.id },
-                updatedAt: new Date(),
-            },
-        });
-        return res.json({ message: "Vous avez suivi l'utilisateur", status: 'OK' });
-    }
-    async addMeasure(req, res) {
-        try {
-            const { Epaule, Manche, Longueur, Poitrine, Fesse, Taille, Cou } = req.body;
-            const idCompte = req.user?.id;
-            const newMeasure = await prisma.measure.create({
-                data: {
-                    Epaule,
-                    Manche,
-                    Longueur,
-                    Poitrine,
-                    Fesse,
-                    Taille,
-                    Cou,
-                    compteId: idCompte,
-                },
-            });
-            await prisma.client.update({
-                where: { compteId: idCompte },
-                data: { measureIds: { push: newMeasure.id } },
-            });
-            res.status(201).json({ message: 'Measure added successfully', measure: newMeasure });
-        }
-        catch (error) {
-            res.status(500).json({ message: 'Error adding measure', error: error.message });
-        }
-    }
-    async addNote(req, res) {
-        try {
-            const { whoNoteId, notedId, rating } = req.body;
-            const note = await prisma.note.create({
-                data: {
-                    whoNoteId,
-                    notedId,
-                    rating,
-                },
-            });
-            return res.status(201).json({ message: 'Note ajoutée avec succès.', note });
-        }
-        catch (error) {
-            return res.status(500).json({ message: error.message });
         }
     }
     async getNotificationsForUser(req, res) {
         const userId = req.id;
         try {
             const notifications = await prisma.notification.findMany({
-                where: { compteId: userId },
+                where: { compte_id: userId },
             });
             return res.status(200).json({ notifications, message: 'Notifications chargées.', status: 'OK' });
         }
@@ -780,62 +242,53 @@ class ClientController {
             return res.status(500).json({ message: error.message, status: 'KO' });
         }
     }
-    async getClientMeasures(req, res) {
+    async sendMessage(req, res) {
         try {
-            const userId = req.id;
-            const measures = await prisma.measure.findMany({
-                where: { compteId: userId },
-            });
-            if (!measures.length) {
-                return res.status(404).json({ message: 'Aucune mesure trouvée pour ce client', status: 'KO' });
+            const { messaged_id, texte } = req.body;
+            const messager_id = parseInt(req.id);
+            console.log(typeof (messager_id));
+            console.log((messaged_id));
+            console.log((texte));
+            const messaged_id1 = parseInt(messaged_id);
+            if (typeof messager_id !== 'number' || typeof messaged_id1 !== 'number' || typeof texte !== 'string') {
+                return res.status(400).json({ message: 'Les champs messager_id, messaged_id et texte sont requis et doivent être du bon type.', status: 'KO' });
             }
-            return res.status(200).json(measures);
+            const newMessage = await prisma.message.create({
+                data: {
+                    messager_id,
+                    messaged_id: messaged_id1,
+                    texte,
+                },
+            });
+            console.log(newMessage);
+            res.status(201).json({ message: 'Message envoyé', status: newMessage });
         }
-        catch (err) {
-            return res.status(500).json({ message: err.message, status: 'KO' });
+        catch (error) {
+            console.error('Erreur lors de l\'envoi du message:', error);
+            res.status(500).json({ message: error.message, status: 'KO' });
         }
     }
-    async getPostById(req, res) {
+    async blockCompte(req, res) {
         try {
-            const postId = req.params.id;
-            const post = await prisma.post.findUnique({
-                where: { id: postId },
-                include: { author: true },
-            });
-            if (!post) {
-                return res.status(404).json({ message: 'Post non trouvé', status: 'KO' });
+            const { blocked_id } = req.body;
+            const blocker_id = parseInt(req.id);
+            console.log((blocker_id));
+            const compte_id1 = parseInt(blocked_id);
+            if (typeof blocker_id !== 'number' || typeof compte_id1 !== 'number') {
+                return res.status(400).json({ message: 'Les champs id et compte_id sont requis et doivent être du bon type.', status: 'KO' });
             }
-            return res.status(200).json({ post, status: 'OK' });
-        }
-        catch (err) {
-            return res.status(500).json({ message: 'Erreur interne du serveur', status: 'KO' });
-        }
-    }
-    async getSomeProfile(req, res) {
-        const { identifiant } = req.params;
-        const idCompte = req.id;
-        const compte = await prisma.compte.findUnique({
-            where: { identifiant },
-        });
-        const user = await prisma.user.findUnique({
-            where: { id: compte?.userId },
-        });
-        if (compte?.role === 'tailleur') {
-            const tailleur = await prisma.tailleur.findUnique({
-                where: { compteId: idCompte },
+            const newBloque = await prisma.bloquer.create({
+                data: {
+                    blocked_id: compte_id1,
+                    blocker_id
+                },
             });
-            if (!tailleur || !user || !compte) {
-                return res.status(404).json({ message: 'Impossible de charger le profile demandé', status: 'KO' });
-            }
-            return res.json({ tailleur, user, compte, status: 'OK' });
+            res.status(200).json({ message: 'compte bloque avec succes', status: newBloque });
         }
-        const client = await prisma.client.findUnique({
-            where: { compteId: idCompte },
-        });
-        if (!client || !user || !compte) {
-            return res.status(404).json({ message: 'Impossible de charger le profile demandé', status: 'KO' });
+        catch (e) {
+            console.error('Erreur lors de la bloquage du compte:', e);
+            res.status(500).json({ message: e.message, status: 'KO' });
         }
-        return res.json({ client, user, compte, status: 'OK' });
     }
 }
 export default new ClientController();

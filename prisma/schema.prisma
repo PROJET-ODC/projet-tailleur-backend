@@ -56,7 +56,6 @@ model Compte {
   likes         Like[]
   favoris       Favori[]
   notifications Notification[]
-  commande      Commande[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @default(now())
 
@@ -166,7 +165,6 @@ model Message {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now())
 
-  @@unique([messager_id, messaged_id])
   @@map("messages")
 }
 
@@ -209,9 +207,6 @@ model Post {
   comments    Comment[]
   favoris     Favori[]
   likes       Like[]
-  tissupost   TissuPost[]
-  taillepost  TaillePost[]
-  commande    Commande[]
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @default(now())
 
@@ -267,7 +262,6 @@ model Favori {
 enum etatLike {
   LIKE
   DISLIKE
-  UNLIKE
 }
 
 model Like {
@@ -315,14 +309,13 @@ model CommandeArticle {
 }
 
 model Stock {
-  id         Int         @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   prix       Decimal
   qte        Int
   article_id Int
-  article    Article     @relation(fields: [article_id], references: [id])
-  tissupost  TissuPost[]
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @default(now())
+  article    Article  @relation(fields: [article_id], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now())
 
   @@map("stocks")
 }
@@ -446,60 +439,6 @@ model CouleurArticle {
   updatedAt  DateTime @default(now())
 
   @@map("couleur_articles")
-}
-
-model TissuPost {
-  id        Int      @id @default(autoincrement())
-  stock_id  Int
-  stock     Stock    @relation(fields: [stock_id], references: [id])
-  post_id   Int
-  post      Post     @relation(fields: [post_id], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-  @@map("tissu_posts")
-}
-
-model Taille {
-  id         Int          @id @default(autoincrement())
-  libelle    String
-  qte        String
-  taillepost TaillePost[]
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @default(now())
-  @@map("tailles")
-}
-
-model TaillePost {
-  id        Int      @id @default(autoincrement())
-  taille_id Int
-  taille    Taille   @relation(fields: [taille_id], references: [id])
-  post_id   Int
-  post      Post     @relation(fields: [post_id], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-  @@map("taille_posts")
-}
-
-model Commande {
-  id        Int        @id @default(autoincrement())
-  post_id   Int
-  post      Post       @relation(fields: [post_id], references: [id])
-  compte_id Int
-  compte    Compte     @relation(fields: [compte_id], references: [id])
-  paiement  Paiement[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @default(now())
-  @@map("commandes")
-}
-
-model Paiement {
-  id          Int      @id @default(autoincrement())
-  montant     Decimal
-  commande_id Int
-  commande    Commande @relation(fields: [commande_id], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @default(now())
-  @@map("paiements")
 }
 
 // model X {
