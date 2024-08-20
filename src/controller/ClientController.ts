@@ -497,7 +497,7 @@ class ClientController {
     
     async follow(req: ControllerRequest, res: Response) {
         try {
-            const { idFollowedCompte } = req.body;
+           const { idFollowedCompte } = req.body;
             const idCompte = req.id ? parseInt(req.id, 10) : undefined;
     
             if (idCompte === undefined) {
@@ -537,15 +537,34 @@ class ClientController {
                     },
                     updatedAt: new Date(),
                 },
-            });
-    
-            return res.json({ message: "Vous avez suivi l'utilisateur", status: 'OK' });
-    
+            })
+
+             return res.json({ message: "Vous avez suivi l'utilisateur", status: 'OK' })
         } catch (error) {
-            return res.status(500).json({ message: 'Une erreur est survenue', status: 'KO'});
+            return res.status(500).json({ message: 'Error adding measure', error: error.message });
         }
     }
-    
+
+    async addNote(req: ControllerRequest, res: Response) {
+        try {
+            const { noter_id, noted_id,note} = req.body;
+
+            const notes = await prisma.Note.create({
+                data: {
+                    noter_id: parseInt(noter_id, 10),
+                    noted_id: parseInt(noted_id, 10),
+                    note: note,  // Assurez-vous que la valeur est correcte
+                   
+                },
+            });
+
+            return res.status(201).json({ message: 'Note ajoutée avec succès.', data:notes });
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+
+   
     async getPostById(req: ControllerRequest, res: Response) {
         try {
             const postId = parseInt(req.params.id, 10); // Conversion de l'ID en nombre

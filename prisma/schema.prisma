@@ -100,6 +100,13 @@ model Mesure {
   id        Int      @id @default(autoincrement())
   compte_id Int      @unique
   compte    Compte   @relation(fields: [compte_id], references: [id])
+  Epaule    Float?
+  Manche    Float?
+  Longueur  Float?
+  Poitrine  Float?
+  Fesse     Float?
+  Taille    Float?
+  Cou       Float?
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
 
@@ -201,8 +208,10 @@ model Status {
   tailleur    Tailleur @relation(fields: [tailleur_id], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now())
+
   @@map("status")
 }
+
 
 model Post {
   id          Int           @id @default(autoincrement())
