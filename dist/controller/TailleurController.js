@@ -306,15 +306,17 @@ class TailleurController {
     }
     async acheterCredit(req, res) {
         try {
-            const { compteId, montant } = req.body;
-            if (typeof montant !== 'number' || montant <= 0) {
+            const { compteId, prix } = req.body;
+            console.log(prix);
+            if (typeof prix !== 'number' || prix <= 0) {
                 return res.status(400).json({ error: 'Montant invalide' });
             }
             const regleConversion = await prisma.conversionCredit.findFirst();
+            console.log(regleConversion);
             if (!regleConversion) {
                 return res.status(500).json({ error: 'Règle de conversion non trouvée' });
             }
-            const credit = (montant * regleConversion.credit) / regleConversion.prix;
+            const credit = (prix * regleConversion.credit) / Number(regleConversion.prix);
             const compte = await prisma.compte.findUnique({
                 where: { id: compteId },
             });
@@ -334,7 +336,7 @@ class TailleurController {
             console.error('Erreur lors de l\'achat de crédits:', error);
             return res.status(500).json({
                 error: 'Une erreur est survenue lors de l\'achat de crédits',
-                details: error.message
+                details: error.message,
             });
         }
     }

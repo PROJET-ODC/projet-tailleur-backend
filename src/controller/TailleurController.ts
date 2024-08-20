@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 import {v2 as cloudinary} from 'cloudinary';
 import fs from "fs";
 import {PrismaClient} from '@prisma/client';
@@ -367,19 +367,23 @@ class TailleurController {
 
     async acheterCredit(req: ControllerRequest, res: Response){
         try {
-            const {compteId, montant} = req.body;
+            const {compteId, prix} = req.body;
+            console.log(prix)
 
             // Validation du montant
-            if (typeof montant !== 'number' || montant <= 0) {
+            if (typeof prix !== 'number' || prix <= 0) {
                 return res.status(400).json({error: 'Montant invalide'});
             }
 
             // Calculer le crédit
             const regleConversion = await prisma.conversionCredit.findFirst();
+            console.log(regleConversion)
+
+            
             if (!regleConversion) {
                 return res.status(500).json({error: 'Règle de conversion non trouvée'});
             }
-            const credit = (montant * regleConversion.credit) / regleConversion.prix;
+            const credit = (prix * regleConversion.credit) / Number(regleConversion.prix);
 
             // Trouver le compte
             const compte = await prisma.compte.findUnique({
@@ -405,11 +409,13 @@ class TailleurController {
             return res.status(200).json({message: 'Crédit ajouté avec succès', compte: updatedCompte});
         } catch (error) {
             console.error('Erreur lors de l\'achat de crédits:', error);
+        
             return res.status(500).json({
                 error: 'Une erreur est survenue lors de l\'achat de crédits',
-                details: error.message
+                details: (error as Error).message, // Assertion de type
             });
         }
+        
     }
 
     async uploadProductImage(req: ControllerRequest, res: Response, fieldName: string){
