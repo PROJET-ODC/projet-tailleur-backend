@@ -71,8 +71,8 @@ class TailleurController {
                     details: error.message
                 });
             }
-
         }
+        
     }
 
     async getArticleCategories (req: ControllerRequest, res: Response){

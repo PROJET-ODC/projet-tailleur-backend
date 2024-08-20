@@ -8,10 +8,17 @@ const router = express.Router();
 router.use(isAuthenticatedGlobal); // Utilisez le middleware pour toutes les routes
 
 
-router.route('/profile/posts/:id').get(clientController.getPostById);
-router.route('/accueil/posts/:id').get(clientController.getPostById);
+router.route('/favorites').get(clientController.getAllFavorites);
 
-router.route('/profile').get(clientController.userProfile);
+router.route('/favorites/add').post(clientController.addFavorite);
+
+router.route('/favorites/delete').delete(clientController.deleteFavorite);
+
+router.route('/compte/report').post(clientController.signaler);
+
+router.route('/posts/comment').post(clientController.ajoutComment).delete(clientController.deleteComment);
+
+router.route('/posts/comment/reponse').post(clientController.reponseComment).delete(clientController.deleteResponseComment);
 
 router.route('/follow').post(clientController.follow);
 
@@ -26,6 +33,5 @@ router.route('/accueil').get(clientController.getNewsFeed); // Route pour obteni
 router.route('/profile').get(clientController.userProfile);
 // // Route pour la recherche de la page fil d'actualité
 router.route('/accueil/search').post(clientController.accueilSearch);
-//
 
 export { router };
