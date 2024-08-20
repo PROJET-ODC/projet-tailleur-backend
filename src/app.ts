@@ -11,7 +11,6 @@ import yamljs from "yamljs";
 import path from "path";
 import { fileURLToPath } from 'url';
 
-
 const app = express();
 
 cloudinary.config({
