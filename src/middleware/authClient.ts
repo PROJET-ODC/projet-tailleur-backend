@@ -23,4 +23,5 @@ export const isClientAuthenticated = (req: AuthenticatedRequest, res: Response, 
         }
     })
     
+    
 }

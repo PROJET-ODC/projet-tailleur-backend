@@ -149,6 +149,16 @@ class AuthController {
                 });
             }
 
+            if (role === "vendeur") {
+                await prisma.vendeur.create({
+                    data: {
+                        compte_id: compte.id,
+                        updatedAt: new Date(),
+                        createdAt: new Date(),
+                    },
+                });
+            }
+
             res.status(201).json({ message: "L'inscription a réussi", status: "OK" });
         } catch (error) {
             res.status(500).json({ message: "Erreur lors de l'inscription", status: "KO", error });

@@ -126,7 +126,6 @@ CREATE TABLE `messages` (
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
-    UNIQUE INDEX `messages_messager_id_messaged_id_key`(`messager_id`, `messaged_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -210,7 +209,7 @@ CREATE TABLE `favoris` (
 -- CreateTable
 CREATE TABLE `likes` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `etat` ENUM('LIKE', 'DISLIKE', 'UNLIKE') NOT NULL,
+    `etat` ENUM('LIKE', 'DISLIKE') NOT NULL,
     `compte_id` INTEGER NOT NULL,
     `post_id` INTEGER NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
