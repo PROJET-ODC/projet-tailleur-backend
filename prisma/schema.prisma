@@ -250,6 +250,8 @@ model CommentResponse {
   comment    Comment  @relation(fields: [comment_id], references: [id])
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now())
+
+  @@map("comment_responses")
 }
 
 model Favori {
