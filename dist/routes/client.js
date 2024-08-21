@@ -1,0 +1,18 @@
+import express from "express";
+import clientController from "../controller/ClientController.js";
+import { isAuthenticatedGlobal } from "../middleware/auth.js";
+const router = express.Router();
+router.use(isAuthenticatedGlobal);
+router.route('/favorites').get(clientController.getAllFavorites);
+router.route('/favorites/add').post(clientController.addFavorite);
+router.route('/favorites/delete').delete(clientController.deleteFavorite);
+router.route('/compte/report').post(clientController.signaler);
+router.route('/posts/comment').post(clientController.ajoutComment).delete(clientController.deleteComment);
+router.route('/posts/comment/reponse').post(clientController.reponseComment).delete(clientController.deleteResponseComment);
+router.route('/follow').post(clientController.follow);
+router.route('/bloquer').post(isAuthenticatedGlobal, clientController.bloquer);
+router.route('/profile/:identifiant').get(clientController.getSomeProfile);
+router.route('/accueil').get(clientController.getNewsFeed);
+router.route('/profile').get(clientController.userProfile);
+router.route('/accueil/search').post(clientController.accueilSearch);
+export { router };
