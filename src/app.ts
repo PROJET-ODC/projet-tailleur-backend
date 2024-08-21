@@ -28,8 +28,7 @@ const BASE_API = process.env.PREFIX_URI;
 const swaggerDocument = yamljs.load(path.join(__dirname,"..", 'swagger.yaml'));
 
 const PORT = process.env.PORT ; // Ajoutez une valeur par défaut si le PORT n'est pas défini dans le fichier .env
-const JWT_SECRET = process.env.JWT_SECRET ;
-const JWT_LIFETIME = process.env.JWT_LIFETIME ;
+
 // Middleware
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
@@ -44,8 +43,6 @@ app.use(`${BASE_API}/vendeur`, vendeurRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server is listening on port ${PORT}`);
-    console.log(`JWT secret: ${JWT_SECRET}`);
-    console.log(`JWT lifetime: ${JWT_LIFETIME}`);
 });
 
 

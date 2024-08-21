@@ -29,10 +29,11 @@ model User {
 
 model ConversionCredit {
   id        Int      @id @default(autoincrement())
-  credit Int
-  prix Decimal @db.Decimal(10, 2)
+  credit    Int
+  prix      Decimal  @db.Decimal(10, 2)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+
   @@map("conversion_credits")
 }
 
@@ -56,7 +57,7 @@ model Compte {
   reporteds     Report[]       @relation("Reporteds")
   reporters     Report[]       @relation("Reporters")
   noteds        Note[]         @relation("Noteds")
-  noters        Note[]        @relation("Noters")
+  noters        Note[]         @relation("Noters")
   blockeds      Bloquer[]      @relation("Blockeds")
   blockers      Bloquer[]      @relation("Blockers")
   messageds     Message[]      @relation("Messageds")
@@ -67,6 +68,7 @@ model Compte {
   notifications Notification[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @default(now())
+  Commande      Commande[]
 
   @@map("comptes")
 }
@@ -210,7 +212,6 @@ model Status {
   @@map("status")
 }
 
-
 model Post {
   id          Int           @id @default(autoincrement())
   content     String
@@ -229,6 +230,9 @@ model Post {
   likes       Like[]
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @default(now())
+  TissuPost   TissuPost[]
+  TaillePost  TaillePost[]
+  Commande    Commande[]
 
   @@map("posts")
 }
@@ -331,7 +335,6 @@ model CommandeArticle {
 }
 
 model Stock {
-
   id          Int         @id @default(autoincrement())
   prix        Decimal     @db.Decimal(10, 2)
   qte         Int
@@ -467,7 +470,6 @@ model CouleurArticle {
   @@map("couleur_articles")
 }
 
-
 model TissuPost {
   id        Int      @id @default(autoincrement())
   stock_id  Int
@@ -526,16 +528,6 @@ model Paiement {
 
   @@map("paiements")
 }
-
-model ConversionCredit {
-  id        Int      @id @default(autoincrement())
-  credit Int
-  prix Decimal @db.Decimal(10, 2)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-  @@map("conversion_credits")
-}
-
 
 // model X {
 //   id        Int      @id @default(autoincrement())

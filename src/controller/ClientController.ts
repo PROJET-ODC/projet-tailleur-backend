@@ -1,6 +1,8 @@
 import { Favori, Comment, CommentResponse, Post, Report, Compte } from '@prisma/client';
 import { PrismaClient } from '@prisma/client';
 import { ControllerRequest } from "../interface/Interface.js";
+import {Response } from "express";
+
 
 const prisma = new PrismaClient();
 
@@ -16,7 +18,7 @@ class ClientController {
     }
   
     // Ajouter un like$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-    async addLike(req, res) {
+    async addLike(req: ControllerRequest, res:Response) {
         try {
             const postId = parseInt(req.body.postId);
             const compteId = parseInt(req.body.compteId);
@@ -65,13 +67,15 @@ class ClientController {
                 return res.status(201).json({ message: 'Like ajouté avec succès', data: newLike, status: 'OK' });
             }
         } catch (err) {
-            return res.status(500).json({ message: err.message, status: 'KO' });
+            if(err instanceof Error) {
+                return res.status(500).json({ message: err.message, status: 'KO' });
+            }
         }
     }
 
 
     // Ajouter un dislike$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-    async addDislike(req, res) {
+    async addDislike(req:ControllerRequest, res: Response) {
         try {
             const postId = parseInt(req.body.postId);
             const compteId = parseInt(req.body.compteId);
@@ -116,14 +120,16 @@ class ClientController {
                 return res.status(201).json({ message: 'Dislike ajouté avec succès', data: newDislike, status: 'OK' });
             }
         } catch (err) {
-            return res.status(500).json({ message: err.message, status: 'KO' });
+            if(err instanceof Error) {
+                return res.status(500).json({ message: err.message, status: 'KO' });
+             }
         }
     }
    
 
     // $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     async getNotificationsForUser(req: ControllerRequest, res: Response) {
-        const userId = req.id;
+        const userId = parseInt(req.id!);
 
         try {
             const notifications = await prisma.notification.findMany({
@@ -132,20 +138,18 @@ class ClientController {
 
             return res.status(200).json({ notifications, message: 'Notifications chargées.', status: 'OK' });
         } catch (error) {
-            return res.status(500).json({ message: error.message, status: 'KO' });
+            if(error instanceof Error) {
+                return res.status(500).json({ message: error.message, status: 'KO' });
+             }
         }
     }
 
 
-    async sendMessage(req: Request, res: Response) {
+    async sendMessage(req: ControllerRequest, res: Response) {
         try {
-            const { messaged_id, texte } = req.body;
-            const messager_id = parseInt(req.id);  // Obtenez l'ID du client connecté depuis la requête `req.id`
+            const {messaged_id, texte} = req.body;
+            const messager_id = parseInt(req.id!);  // Obtenez l'ID du client connecté depuis la requête `req.id`
             // Utilisation du champ correct `id` du client connecté
-
-            console.log(typeof (messager_id));
-            console.log((messaged_id));
-            console.log((texte));
 
 
             const messaged_id1 = parseInt(messaged_id);
@@ -168,8 +172,9 @@ class ClientController {
 
             res.status(201).json({ message: 'Message envoyé', status: newMessage });
         } catch (error) {
-            console.error('Erreur lors de l\'envoi du message:', error);
-            res.status(500).json({ message: error.message, status: 'KO' });
+           if(error instanceof Error) {
+                res.status(500).json({ message: error.message, status: 'KO' });
+             }
         }
     }
   
@@ -482,7 +487,6 @@ class ClientController {
         return myFollowersRecentStatus;
     }
 
-
     async getNewsFeed(req: ControllerRequest, res: Response){
         const compte_id = parseInt(req.id!);
         const now = Date.now();
@@ -548,7 +552,7 @@ class ClientController {
   
    async ShareNb(req: ControllerRequest, res: Response) {
                 try {
-                    const postId = req.id;
+                    const postId = parseInt(req.id!);
     
                     const post = await prisma.post.update({
                         where: { id: postId },
@@ -568,7 +572,7 @@ class ClientController {
     
     async ViewsNb(req: ControllerRequest, res: Response) {
         try {
-            const postId = req.id;
+            const postId = parseInt(req.id!);
     
             const post = await prisma.post.update({
                 where: { id: postId },
@@ -739,7 +743,9 @@ class ClientController {
 
              return res.json({ message: "Vous avez suivi l'utilisateur", status: 'OK' })
         } catch (error) {
-            return res.status(500).json({ message: 'Error adding measure', error: error.message });
+            if(error instanceof Error) {
+                return res.status(500).json({ message: 'Error adding measure', error: error.message });
+            }
         }
     }
 
@@ -747,21 +753,61 @@ class ClientController {
         try {
             const { noter_id, noted_id,note} = req.body;
 
-            const notes = await prisma.Note.create({
+            const notes = await prisma.note.create({
                 data: {
                     noter_id: parseInt(noter_id, 10),
                     noted_id: parseInt(noted_id, 10),
                     note: note,  // Assurez-vous que la valeur est correcte
-                   
                 },
             });
 
             return res.status(201).json({ message: 'Note ajoutée avec succès.', data:notes });
         } catch (error) {
-            return res.status(500).json({ message: error.message });
+            if(error instanceof Error) {
+                return res.status(500).json({ message: error.message });
+            }
         }
     }
 
+    async userProfile(req:ControllerRequest, res:Response) {
+        try {
+            const id = parseInt(req.id!);
+            const compte = await prisma.compte.findUnique({
+                where: { id },
+            });
+            const user = await prisma.user.findUnique({
+                where: { id: compte?.user_id },
+            });
+            if (compte?.role === 'tailleur') {
+                const tailleur = await prisma.tailleur.findUnique({
+                    where: { compte_id: id },
+                });
+                const posts = await prisma.post.findMany({
+                    where: {
+                        AND: [
+                            { tailleur_id: tailleur?.id },
+                            { status: 'PUBLIE' }
+                        ]
+                    },
+                });
+                if (!tailleur || !user || !compte) {
+                    return res.status(404).json({ message: 'Impossible de charger le profile demandé', status: 'KO' });
+                }
+                return res.json({ tailleur, user, compte, posts, status: 'OK' });
+            }
+            const client = await prisma.client.findUnique({
+                where: { compte_id: id },
+            });
+            if (!client || !user || !compte) {
+                return res.status(404).json({ message: 'Impossible de charger le profile demandé', status: 'KO' });
+            }
+            const followersPosts = await this.getMyFollowersPost(compte.id);
+            return res.json({ client, user, compte, followersPosts, status: 'OK' });
+        }
+        catch (error) {
+            return res.status(500).json({ message: 'Erreur interne du serveur', status: 'KO' });
+        }
+    }
    
     async getPostById(req: ControllerRequest, res: Response) {
         try {
