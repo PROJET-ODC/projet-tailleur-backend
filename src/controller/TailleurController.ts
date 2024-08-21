@@ -323,34 +323,32 @@ class TailleurController {
             }
         }
     }
-
-
-    async getArticleCategories(req: ControllerRequest, res: Response) {
-
+    async getAllApprovisions(req: ControllerRequest, res: Response): Promise<void> {
+        try {
+            // Assurez-vous que 'id' est défini et est un nombre
+            const tailleurId = req.id;
+            if (!tailleurId) {
+                res.status(400).json({ error: 'Tailleur ID manquant' });
+                return;
+            }
+    
+            // Requête pour récupérer les commandes du tailleur
+            const commandes = await prisma.commandeArticle.findMany({
+                where: { tailleur_id: tailleurId },
+                include: {
+                    detailcommandes: true,
+                    paiement: true 
+                }
+            });
+    
+            res.json(commandes);
+        } catch (error) {
+            console.error('Erreur lors de la récupération des commandes:', error);
+            res.status(500).json({ error: 'Erreur serveur' });
+        }
     }
-
-    async getAllArticles(req: ControllerRequest, res: Response) {
-
-    }
-
-    async getSomeArticle(req: ControllerRequest, res: Response) {
-
-    }
-
-    async getAllApprovisions(req: ControllerRequest, res: Response) {
-
-    }
-
-    async payerResteCommande(req: ControllerRequest, res: Response) {
-
-    }
-
-    async detailsApprovisions(req: ControllerRequest, res: Response) {
-
-    }
-
-    async addApprovisions(req: ControllerRequest, res: Response) {
-
+    async addApprovisions(req: ControllerRequest, res: Response): Promise<void> {
+        
     }
 
 }

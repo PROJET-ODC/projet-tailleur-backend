@@ -1,8 +1,0 @@
--- AlterTable
-ALTER TABLE `mesures` ADD COLUMN `Cou` DOUBLE NULL,
-    ADD COLUMN `Epaule` DOUBLE NULL,
-    ADD COLUMN `Fesse` DOUBLE NULL,
-    ADD COLUMN `Longueur` DOUBLE NULL,
-    ADD COLUMN `Manche` DOUBLE NULL,
-    ADD COLUMN `Poitrine` DOUBLE NULL,
-    ADD COLUMN `Taille` DOUBLE NULL;
