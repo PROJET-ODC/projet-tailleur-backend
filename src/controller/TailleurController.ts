@@ -398,7 +398,39 @@ class TailleurController {
             res.status(500).json({ message: "Server error", status: "KO" });
         }
     }
+    // Method to fetch an article by slug
+    async getArticleBySlug(req: ControllerRequest, res: Response) {
+        try {
+            const { slug } = req.params;
 
+            // Ensure req.id is treated as a number
+            const compteId = parseInt(req.id as string);
+
+            const article = await prisma.article.findFirst({
+                where: {
+                    slug: slug,
+                    etat: "ACTIF",
+                    vendeur: {
+                        compte_id: compteId, // Now compte_id is a number
+                    },
+                },
+                include: {
+                    article_unite: true,
+                    couleur_article: true,
+                    stock: true,
+                },
+            });
+
+            if (article) {
+                res.json({ article, status: "OK" });
+            } else {
+                res.status(404).json({ message: "Article not found", status: "KO" });
+            }
+        } catch (error) {
+            console.error("Error fetching article by slug:", error);
+            res.status(500).json({ message: "Server error", status: "KO" });
+        }
+    }
 }
 
 export default new TailleurController();
