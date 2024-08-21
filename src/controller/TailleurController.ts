@@ -326,7 +326,7 @@ class TailleurController {
     async getAllApprovisions(req: ControllerRequest, res: Response): Promise<void> {
         try {
             // Assurez-vous que 'id' est défini et est un nombre
-            const tailleurId = req.id;
+            const tailleurId = Number(req.id);
             if (!tailleurId) {
                 res.status(400).json({ error: 'Tailleur ID manquant' });
                 return;
@@ -334,11 +334,11 @@ class TailleurController {
     
             // Requête pour récupérer les commandes du tailleur
             const commandes = await prisma.commandeArticle.findMany({
-                where: { tailleur_id: tailleurId },
-                include: {
-                    detailcommandes: true,
-                    paiement: true 
-                }
+                where: { tailleur_id : tailleurId },
+                // include: {
+                //     detailcommandes: true,
+                //     paiement: true 
+                // }
             });
     
             res.json(commandes);
@@ -347,9 +347,31 @@ class TailleurController {
             res.status(500).json({ error: 'Erreur serveur' });
         }
     }
-    async addApprovisions(req: ControllerRequest, res: Response): Promise<void> {
-        
+    async detailsApprovisions(req: ControllerRequest, res: Response): Promise<void> {
+        try {
+            // Supposons que commande_id soit envoyé dans req.body
+            const commande_id  = Number(req.body);
+            
+            if (!commande_id) {
+                res.status(400).json({ error: 'Commande ID manquant' });
+                return;
+            }
+    
+            const detailCommandes = await prisma.detailCommandeArticle.findMany({
+                where: { commande_id },  // Ici, on filtre juste par commande_id
+                include: {
+                    article: true  // Inclusion des détails de l'article associé
+                }
+            });
+    
+            res.json(detailCommandes);
+        } catch (error) {
+            console.error('Erreur lors de la récupération:', error);
+            res.status(500).json({ error: 'Erreur serveur' });
+        }
     }
+    
+    
 
 }
 
