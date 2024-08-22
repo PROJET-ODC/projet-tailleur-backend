@@ -236,6 +236,8 @@ class VendeurController {
         console.log("Vendeur trouvé :", vendeur); // Log du vendeur
     
         try {
+
+            
             // Récupérer les commandes où les articles appartiennent au vendeur
             const commandes = await prisma.commandeArticle.findMany({
                 where: {
