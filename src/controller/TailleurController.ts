@@ -1,8 +1,9 @@
-import {v2 as cloudinary} from 'cloudinary'
+import { v2 as cloudinary } from 'cloudinary'
 import fs from "fs";
-import {PrismaClient} from "@prisma/client";
-import {Response} from "express";
-import {ControllerRequest} from "../interface/Interface";
+import { PrismaClient } from "@prisma/client";
+import { Response } from "express";
+import { ControllerRequest } from "../interface/Interface";
+import { Decimal } from '@prisma/client/runtime/library';
 
 const prisma = new PrismaClient();
 
@@ -21,14 +22,14 @@ class TailleurController {
     async createStatus(req: ControllerRequest, res: Response) {
         try {
             const compte_id = parseInt(req.id!);
-            const tailleur = await prisma.tailleur.findUnique({where: {compte_id: compte_id}});
+            const tailleur = await prisma.tailleur.findUnique({ where: { compte_id: compte_id } });
 
-            const {description} = req.body;
+            const { description } = req.body;
             if (!tailleur) {
-                return res.status(400).json({message: "Le tailleur est introuvable", status: "KO"})
+                return res.status(400).json({ message: "Le tailleur est introuvable", status: "KO" })
             }
             if (!req.files) {
-                return res.status(400).json({message: "Le fichier est requis", status: "KO"})
+                return res.status(400).json({ message: "Le fichier est requis", status: "KO" })
             }
 
             const fileNames = "name" in req.files["files"] ? req.files["files"].name : "";
@@ -43,10 +44,10 @@ class TailleurController {
                 },
             });
 
-            res.status(201).json({message: 'Statut créé', status: newStatus});
+            res.status(201).json({ message: 'Statut créé', status: newStatus });
         } catch (error) {
             if (error instanceof Error) {
-                return res.status(500).json({message: error.message, status: 'KO'});
+                return res.status(500).json({ message: error.message, status: 'KO' });
             }
         }
     }
@@ -55,10 +56,10 @@ class TailleurController {
         try {
             const idCompte = parseInt(req.id!);
             const compte = await prisma.compte.findUnique({
-                where: {id: idCompte},
+                where: { id: idCompte },
             });
             if (!compte) {
-                return res.status(404).json({message: "Compte introuvable", status: "KO"});
+                return res.status(404).json({ message: "Compte introuvable", status: "KO" });
             }
             const now = new Date();
             const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -73,7 +74,7 @@ class TailleurController {
             );
 
             // Valider les champs
-            const {content, title, useCredit} = req.body;
+            const { content, title, useCredit } = req.body;
 
             if (!content || typeof content !== "string") {
                 return res.status(400).json({
@@ -85,23 +86,23 @@ class TailleurController {
             if (!title || typeof title !== "string") {
                 return res
                     .status(400)
-                    .json({message: "Title must be a non-empty string", status: "KO"});
+                    .json({ message: "Title must be a non-empty string", status: "KO" });
             }
 
             if (!req.files) {
-                return res.status(400).json({message: "Le fichier est requis", status: "KO"})
+                return res.status(400).json({ message: "Le fichier est requis", status: "KO" })
             }
 
             const fileNames = "name" in req.files["files"] ? req.files["files"].name : "";
             // return res.json(fileNames);
             // Récupérer le tailleur avant de créer le post
             const tailleur = await prisma.tailleur.findUnique({
-                where: {compte_id: idCompte},
+                where: { compte_id: idCompte },
             });
             if (!tailleur) {
                 return res
                     .status(404)
-                    .json({message: "Tailleur not found", status: "KO"});
+                    .json({ message: "Tailleur not found", status: "KO" });
             }
 
             const allMyPosts = await prisma.post.findMany({
@@ -119,8 +120,8 @@ class TailleurController {
                 if (compte.credit >= 2) {
                     compte.credit -= 2;
                     await prisma.compte.update({
-                        where: {id: idCompte},
-                        data: {credit: compte.credit},
+                        where: { id: idCompte },
+                        data: { credit: compte.credit },
                     });
 
                     const newPost = await prisma.post.create({
@@ -153,11 +154,11 @@ class TailleurController {
                 }
             } else {
                 // if (req.files.length > 1) {
-                    return res.json({
-                        message:
-                            "Vous ne pouvez poster plus de 1 file pour le moment, utilisez vos crédits",
-                        status: "KO",
-                    });
+                return res.json({
+                    message:
+                        "Vous ne pouvez poster plus de 1 file pour le moment, utilisez vos crédits",
+                    status: "KO",
+                });
                 // }
             }
         } catch (error) {
@@ -173,11 +174,11 @@ class TailleurController {
 
     async acheterCredit(req: ControllerRequest, res: Response) {
         try {
-            let {montant} = req.body;
+            let { montant } = req.body;
             const compteId = parseInt(req.id!);
             // Validation du montant
             if (typeof parseInt(montant) !== 'number' || montant <= 0) {
-                return res.status(400).json({error: 'Montant invalide'});
+                return res.status(400).json({ error: 'Montant invalide' });
             }
 
             // Calculer le crédit
@@ -189,7 +190,7 @@ class TailleurController {
             });
             // console.log(regleConversion)
             if (!regleConversion) {
-                return res.status(500).json({error: 'Règle de conversion non trouvée'});
+                return res.status(500).json({ error: 'Règle de conversion non trouvée' });
             }
             montant = parseInt(montant);
             let c = regleConversion.credit as number;
@@ -198,26 +199,26 @@ class TailleurController {
 
             // Trouver le compte
             const compte = await prisma.compte.findUnique({
-                where: {id: compteId},
+                where: { id: compteId },
             });
 
             if (!compte) {
-                return res.status(404).json({error: 'Compte non trouvé'});
+                return res.status(404).json({ error: 'Compte non trouvé' });
             }
 
             // Vérifier si le compte est un "tailleur"
             if (compte.role !== 'tailleur') {
-                return res.status(403).json({error: 'Seul un tailleur peut acheter des crédits'});
+                return res.status(403).json({ error: 'Seul un tailleur peut acheter des crédits' });
             }
 
             // Ajouter le crédit au crédit existant
             const updatedCompte = await prisma.compte.update({
-                where: {id: compteId},
-                data: {credit: credit + compte.credit},
+                where: { id: compteId },
+                data: { credit: credit + compte.credit },
             });
 
             // Envoyer la réponse
-            return res.status(200).json({message: 'Crédit ajouté avec succès', compte: updatedCompte});
+            return res.status(200).json({ message: 'Crédit ajouté avec succès', compte: updatedCompte });
         } catch (error) {
             if (error instanceof Error) {
                 console.error('Erreur lors de l\'achat de crédits:', error);
@@ -230,18 +231,18 @@ class TailleurController {
 
     }
 
-//for update
+    //for update
     async updatePost(req: ControllerRequest, res: Response) {
         try {
             const postId = parseInt(req.params.postId, 10);  // Convertir l'ID en entier
-            const {content, title} = req.body;
+            const { content, title } = req.body;
             const compte_id = parseInt(req.id!);
 
             const tailleur = await prisma.tailleur.findUnique({
-                where:{compte_id}
+                where: { compte_id }
             })
 
-            if (!tailleur){
+            if (!tailleur) {
                 return res.status(404).json({
                     message: "Tailleur not found",
                     status: 'KO'
@@ -264,7 +265,7 @@ class TailleurController {
 
             // Mettre à jour les champs de base
             const updatedPost = await prisma.post.update({
-                where: {id: postId},
+                where: { id: postId },
                 data: {
                     content: content ?? post.content,
                     title: title ?? post.title,
@@ -274,10 +275,10 @@ class TailleurController {
             });
 
 
-            return res.status(200).json({message: "Post updated successfully", status: 'OK', post: updatedPost});
+            return res.status(200).json({ message: "Post updated successfully", status: 'OK', post: updatedPost });
         } catch (err) {
-            if(err instanceof Error) {
-                return res.status(500).json({message: err.message, status: 'KO'});
+            if (err instanceof Error) {
+                return res.status(500).json({ message: err.message, status: 'KO' });
             }
         }
     }
@@ -288,10 +289,10 @@ class TailleurController {
             const compte_id = parseInt(req.id!);
 
             const tailleur = await prisma.tailleur.findUnique({
-                where:{compte_id}
+                where: { compte_id }
             })
 
-            if (!tailleur){
+            if (!tailleur) {
                 return res.status(404).json({
                     message: "Tailleur not found",
                     status: 'KO'
@@ -300,7 +301,7 @@ class TailleurController {
 
             // Vérifier si le post existe et appartient au tailleur
             const post = await prisma.post.findUnique({
-                where: {id: postId},
+                where: { id: postId },
             });
 
             if (!post || post.tailleur_id !== tailleur.id) {
@@ -312,14 +313,14 @@ class TailleurController {
 
             // Supprimer le post
             await prisma.post.delete({
-                where: {id: postId},
+                where: { id: postId },
             });
 
 
-            return res.status(200).json({message: "Post deleted successfully", status: 'OK'});
+            return res.status(200).json({ message: "Post deleted successfully", status: 'OK' });
         } catch (err) {
-            if(err instanceof Error) {
-                return res.status(500).json({message: err.message, status: 'KO'});
+            if (err instanceof Error) {
+                return res.status(500).json({ message: err.message, status: 'KO' });
             }
         }
     }
@@ -350,9 +351,63 @@ class TailleurController {
     }
 
     async addApprovisions(req: ControllerRequest, res: Response) {
-
+        const { montant, commande_id } = req.body;
+    
+        // Vérification des données requises
+        if (!montant || !commande_id) {
+            return res.status(400).json({ message: 'Montant et commande_id sont requis.', status: 'KO' });
+        }
+    
+        try {
+            // Convertir commande_id en entier
+            const commandeIdInt = parseInt(commande_id, 10);
+    
+            // Vérifier si la commande existe
+            const commande = await prisma.commandeArticle.findUnique({
+                where: { id: commandeIdInt },
+            });
+    
+            if (!commande) {
+                return res.status(404).json({ message: 'Commande non trouvée.', status: 'KO' });
+            }
+    
+            // Convertir le montant en Decimal
+            const montantDecimal = new Decimal(montant);
+    
+            // Vérifier si le montant est suffisant
+            if (montantDecimal.lessThan(commande.montantTotal)) {
+                return res.status(400).json({ message: 'Le montant du paiement est insuffisant.', status: 'KO' });
+            }
+    
+            // Vérifier si la commande est déjà terminée
+            if (commande.etat === "TERMINER") {
+                return res.status(400).json({ message: 'Commande déjà payé.', status: 'KO' });
+            }
+    
+            // Créer un nouvel enregistrement de paiement
+            const paiement = await prisma.paiementArticle.create({
+                data: {
+                    montant: montantDecimal.toNumber(), // Convertir en number pour stocker
+                    commande_id: commandeIdInt,
+                },
+            });
+    
+            console.log("Paiement créé :", paiement); // Log du paiement créé
+    
+            // Mettre à jour l'état de la commande à "TERMINER"
+            await prisma.commandeArticle.update({
+                where: { id: commandeIdInt },
+                data: { etat: 'TERMINER' }, // Utiliser la valeur correcte de l'énumération
+            });
+    
+            return res.json({ paiement, message: 'Paiement enregistré avec succès, merci d\'avoir choisir notre plateforme TechTailor.', status: 'OK' });
+    
+        } catch (err) {
+            console.error("Erreur lors de l'enregistrement du paiement :", err); // Log de l'erreur
+            return res.status(500).json({ message: 'Erreur lors de l\'enregistrement du paiement.', status: 'KO' });
+        }
     }
-
+    
 }
 
 export default new TailleurController();

@@ -1,12 +1,12 @@
-import {v2 as cloudinary} from 'cloudinary';
+import { v2 as cloudinary } from 'cloudinary';
 import fs from "fs";
-import {ArticleUnite, PrismaClient, Unite} from '@prisma/client';
-import {Response} from 'express';
-import {ControllerRequest} from "../interface/Interface.js";
+import { ArticleUnite, PrismaClient, Unite } from '@prisma/client';
+import { Response } from 'express';
+import { ControllerRequest } from "../interface/Interface.js";
 
 const prisma = new PrismaClient();
 
-class TailleurController {
+class VendeurController {
     constructor() {
         for (const key of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
             const val = (this as any)[key];
@@ -16,7 +16,7 @@ class TailleurController {
         }
     }
 
-    async addArticle (req: ControllerRequest, res: Response){
+    async addArticle(req: ControllerRequest, res: Response) {
         const id = parseInt(req.id!);
         const {
             libelle,
@@ -27,24 +27,24 @@ class TailleurController {
             unites
         } = req.body;
 
-        if (!libelle || !images || !description || !categorie_id || !couleurs || !unites){
-            return res.status(400).json({message: 'Tous les champs sont obligatoires', status:'KO'});
+        if (!libelle || !images || !description || !categorie_id || !couleurs || !unites) {
+            return res.status(400).json({ message: 'Tous les champs sont obligatoires', status: 'KO' });
         }
 
         const vendeur = await prisma.vendeur.findUnique({
-            where:{compte_id:id}
+            where: { compte_id: id }
         })
 
-        if(!vendeur){
-            return res.status(404).json({message: 'Vendeur non trouvé', status:'KO'});
+        if (!vendeur) {
+            return res.status(404).json({ message: 'Vendeur non trouvé', status: 'KO' });
         }
 
         try {
             const article = await prisma.article.create({
                 data: {
-                    libelle: ""+libelle,
+                    libelle: "" + libelle,
                     image: images,
-                    description: ""+description,
+                    description: "" + description,
                     categorie_id: parseInt(categorie_id),
                     vendeur_id: vendeur.id,
                     createdAt: new Date(),
@@ -53,22 +53,22 @@ class TailleurController {
                     etat: "ACTIF",
                 }
             });
-            if(!article){
+            if (!article) {
                 return res.status(500).json({
                     message: 'Une erreur est survenue lors de la création de l\'article',
                     status: 'KO'
                 });
             }
-            for(let i = 0; i<couleurs.length; i++){
+            for (let i = 0; i < couleurs.length; i++) {
                 let couleur_article = await prisma.couleurArticle.create({
-                    data:{
+                    data: {
                         article_id: article.id,
                         couleur_id: couleurs[i],
                         createdAt: new Date(),
                         updatedAt: new Date(),
                     }
                 })
-                if(!couleur_article){
+                if (!couleur_article) {
                     return res.status(500).json({
                         message: 'Une erreur est survenue lors de la création de la couleur pour l\'article',
                         status: 'KO'
@@ -76,7 +76,7 @@ class TailleurController {
                 }
             }
 
-            for(let i = 0; i < unites.length; i++) {
+            for (let i = 0; i < unites.length; i++) {
                 let unite_article = await prisma.articleUnite.create({
                     data: {
                         prix: unites[i].prix,
@@ -89,10 +89,10 @@ class TailleurController {
                 })
             }
 
-            return res.json({message: "L'article est ajouté avec succès", status:"OK"});
+            return res.json({ message: "L'article est ajouté avec succès", status: "OK" });
 
-        }catch (error){
-            if (error instanceof Error){
+        } catch (error) {
+            if (error instanceof Error) {
                 return res.status(500).json({
                     message: 'Une erreur est survenue lors de la création de l\'article',
                     status: 'KO'
@@ -102,41 +102,41 @@ class TailleurController {
 
     }
 
-    async myArticles (req: ControllerRequest, res: Response){
+    async myArticles(req: ControllerRequest, res: Response) {
         const id = parseInt(req.id!);
         const vendeur = await prisma.vendeur.findUnique({
-            where:{compte_id:id}
+            where: { compte_id: id }
         })
 
-        if(!vendeur){
-            return res.status(404).json({message: 'Vendeur non trouvé', status:'KO'});
+        if (!vendeur) {
+            return res.status(404).json({ message: 'Vendeur non trouvé', status: 'KO' });
         }
 
         try {
             const articles = await prisma.article.findMany({
-                where:{
-                   AND: [
-                       {vendeur_id: vendeur.id},
-                       {etat: "ACTIF"}
-                   ]
+                where: {
+                    AND: [
+                        { vendeur_id: vendeur.id },
+                        { etat: "ACTIF" }
+                    ]
                 },
-                include:{
-                    couleur_article:{
-                        select:{couleur:true},
+                include: {
+                    couleur_article: {
+                        select: { couleur: true },
                     },
-                    categorie:{
-                        select:{libelle:true},
+                    categorie: {
+                        select: { libelle: true },
                     },
-                    article_unite:{
-                        select:{prix:true, qte:true, unite:true},
+                    article_unite: {
+                        select: { prix: true, qte: true, unite: true },
                     },
                 },
             })
 
-            return res.json({message: "Les articles sont récupérés avec succès", status:"OK", data:articles});
+            return res.json({ message: "Les articles sont récupérés avec succès", status: "OK", data: articles });
 
-        }catch(error){
-            if(error instanceof Error){
+        } catch (error) {
+            if (error instanceof Error) {
                 return res.status(500).json({
                     message: 'Une erreur est survenue lors de la récupération des articles',
                     status: 'KO'
@@ -146,16 +146,16 @@ class TailleurController {
     }
 
 
-    async updateArticle (req: ControllerRequest, res: Response){
+    async updateArticle(req: ControllerRequest, res: Response) {
         const { unites, article_id } = req.body;
         const compte_id = parseInt(req.id!);
 
         const vendeur = await prisma.vendeur.findUnique({
-            where:{compte_id}
+            where: { compte_id }
         });
 
-        if(!vendeur){
-            return res.status(404).json({message: 'Vendeur non trouvé', status:'KO'});
+        if (!vendeur) {
+            return res.status(404).json({ message: 'Vendeur non trouvé', status: 'KO' });
         }
 
         for (const unite of unites) {
@@ -170,23 +170,23 @@ class TailleurController {
                     },
                 }
             });
-            if(!article_unite){
+            if (!article_unite) {
                 return res.status(500).json({
                     message: 'Une erreur est survenue lors de la mise à jour de la quantité pour l\'article',
                     status: 'KO'
                 });
             }
         }
-        return res.json({message: "Les quantités des articles ont été mises à jour avec succès", status:"OK"});
+        return res.json({ message: "Les quantités des articles ont été mises à jour avec succès", status: "OK" });
     }
-    async myCommandes (req: ControllerRequest, res: Response){
+    async myCommandes(req: ControllerRequest, res: Response) {
         const id = parseInt(req.id!);
         const vendeur = await prisma.vendeur.findUnique({
-            where:{compte_id:id}
+            where: { compte_id: id }
         });
 
-        if(!vendeur){
-            return res.status(404).json({message: 'Vendeur non trouvé', status:'KO'});
+        if (!vendeur) {
+            return res.status(404).json({ message: 'Vendeur non trouvé', status: 'KO' });
         }
 
         try {
@@ -209,19 +209,67 @@ class TailleurController {
                 }
             });
 
-            return res.json({commandes, message: "Les commandes sont récupérées avec succès", status:"OK"});
+            return res.json({ commandes, message: "Les commandes sont récupérées avec succès", status: "OK" });
 
-        }catch(err){
-            if(err instanceof Error){
-                return res.json({message: err.message, status: "KO"})
+        } catch (err) {
+            if (err instanceof Error) {
+                return res.json({ message: err.message, status: "KO" })
             }
         }
     }
-    async validateCommandes (req: ControllerRequest, res: Response){
+    async validateCommandes(req: ControllerRequest, res: Response) {
 
     }
 
-
+    async listCommandes(req: ControllerRequest, res: Response) {
+        const vendeurId = parseInt(req.id!);
+    
+        // Vérification de l'existence du vendeur
+        const vendeur = await prisma.vendeur.findUnique({
+            where: { compte_id: vendeurId }
+        });
+    
+        if (!vendeur) {
+            return res.status(404).json({ message: 'Vendeur non trouvé', status: 'KO' });
+        }
+    
+        console.log("Vendeur trouvé :", vendeur); // Log du vendeur
+    
+        try {
+            // Récupérer les commandes où les articles appartiennent au vendeur
+            const commandes = await prisma.commandeArticle.findMany({
+                where: {
+                    detailcommandes: {
+                        some: {
+                            article: {
+                                vendeur_id: vendeur.id // ID du vendeur
+                            }
+                        }
+                    }
+                },
+                include: {
+                    paiement: true, // Inclure les paiements
+                    detailcommandes: {
+                        include: {
+                            article: true, // Inclure les articles
+                        }
+                    },
+                    tailleur: true, // Inclure les informations sur le tailleur
+                },
+                distinct: ['id'], // Assurer l'unicité des commandes
+            });
+    
+            console.log("Commandes récupérées :", commandes); // Log des commandes
+    
+            return res.json({ commandes, message: "Les commandes sont récupérées avec succès", status: "OK" });
+    
+        } catch (err) {
+            console.error("Erreur lors de la récupération des commandes :", err); // Log de l'erreur
+            return res.status(500).json({ message: 'Erreur lors de la récupération des commandes', status: "KO" });
+        }
+    }
+    
+    
+    
 }
-
-export default new TailleurController();
+export default new VendeurController();
