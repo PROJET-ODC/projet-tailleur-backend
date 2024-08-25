@@ -6,11 +6,12 @@ import { router as authRoutes } from "./routes/auth.js";
 import { router as clientRoutes } from "./routes/client.js";
 import { router as tailleurRoutes } from "./routes/tailleur.js";
 import { router as vendeurRoutes } from "./routes/vendeur.js";
+import{router as AdminRoutes} from "./routes/admin.js"; 
 import swaggerUi from "swagger-ui-express";
 import yamljs from "yamljs";
 import path from "path";
 import { fileURLToPath } from 'url';
-
+import crypto from 'crypto';
 const app = express();
 
 cloudinary.config({
@@ -40,6 +41,7 @@ app.use(`${BASE_API}`, authRoutes);
 app.use(`${BASE_API}/client`, clientRoutes);
 app.use(`${BASE_API}/tailleur`, tailleurRoutes);
 app.use(`${BASE_API}/vendeur`, vendeurRoutes);
+app.use(`${BASE_API}/admin`, AdminRoutes);
 
 app.listen(PORT, () => {
     console.log(`Server is listening on port ${PORT}`);

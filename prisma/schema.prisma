@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -29,10 +23,11 @@ model User {
 
 model ConversionCredit {
   id        Int      @id @default(autoincrement())
-  credit Int
-  prix Decimal @db.Decimal(10, 2)
+  credit    Int
+  prix      Decimal  @db.Decimal(10, 2)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+
   @@map("conversion_credits")
 }
 
@@ -46,28 +41,29 @@ model Compte {
   bio           String
   credit        Int
   user_id       Int            @unique
-  user          User           @relation(fields: [user_id], references: [id])
-  tailleur      Tailleur?
-  client        Client?
-  vendeur       Vendeur?
-  mesure        Mesure?
-  followeds     Follow[]       @relation("Followeds")
-  followers     Follow[]       @relation("Followers")
-  reporteds     Report[]       @relation("Reporteds")
-  reporters     Report[]       @relation("Reporters")
-  noteds        Note[]         @relation("Noteds")
-  noters        Note[]        @relation("Noters")
-  blockeds      Bloquer[]      @relation("Blockeds")
-  blockers      Bloquer[]      @relation("Blockers")
-  messageds     Message[]      @relation("Messageds")
-  messagers     Message[]      @relation("Messagers")
-  comments      Comment[]
-  likes         Like[]
-  favoris       Favori[]
-  notifications Notification[]
-  commande      Commande[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @default(now())
+  admin         Admin?
+  blockeds      Bloquer[]      @relation("Blockeds")
+  blockers      Bloquer[]      @relation("Blockers")
+  client        Client?
+  Commande      Commande[]
+  comments      Comment[]
+  user          User           @relation(fields: [user_id], references: [id])
+  favoris       Favori[]
+  followeds     Follow[]       @relation("Followeds")
+  followers     Follow[]       @relation("Followers")
+  likes         Like[]
+  messageds     Message[]      @relation("Messageds")
+  messagers     Message[]      @relation("Messagers")
+  mesure        Mesure?
+  noteds        Note[]         @relation("Noteds")
+  noters        Note[]         @relation("Noters")
+  notifications Notification[]
+  reporteds     Report[]       @relation("Reporteds")
+  reporters     Report[]       @relation("Reporters")
+  tailleur      Tailleur?
+  vendeur       Vendeur?
 
   @@map("comptes")
 }
@@ -75,11 +71,14 @@ model Compte {
 model Tailleur {
   id        Int               @id @default(autoincrement())
   compte_id Int               @unique
-  compte    Compte            @relation(fields: [compte_id], references: [id])
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @default(now())
+  commande  CommandeArticle[]
   posts     Post[]
   status    Status[]
-  commande  CommandeArticle[]
   stock     Stock[]
+  compte    Compte            @relation(fields: [compte_id], references: [id])
+  paiement        PaiementArticle[]
   createdAt DateTime          @default(now())
   updatedAt DateTime          @default(now())
 
@@ -89,19 +88,39 @@ model Tailleur {
 model Client {
   id        Int      @id @default(autoincrement())
   compte_id Int      @unique
-  compte    Compte   @relation(fields: [compte_id], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+  compte    Compte   @relation(fields: [compte_id], references: [id])
 
   @@map("clients")
+}
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  nom       String
+  prenom    String
+  compte_id Int      @unique
+  revenu    Decimal  @default(0.00) @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  compte    Compte   @relation(fields: [compte_id], references: [id])
+
+  @@map("admins")
 }
 
 model Mesure {
   id        Int      @id @default(autoincrement())
   compte_id Int      @unique
-  compte    Compte   @relation(fields: [compte_id], references: [id])
+  Epaule    Float?
+  Manche    Float?
+  Longueur  Float?
+  Poitrine  Float?
+  Fesse     Float?
+  Taille    Float?
+  Cou       Float?
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+  compte    Compte   @relation(fields: [compte_id], references: [id])
 
   @@map("mesures")
 }
@@ -111,12 +130,13 @@ model Report {
   motif       String
   reporter_id Int
   reported_id Int
-  reporter    Compte   @relation("Reporters", fields: [reporter_id], references: [id])
-  reported    Compte   @relation("Reporteds", fields: [reported_id], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now())
+  reported    Compte   @relation("Reporteds", fields: [reported_id], references: [id])
+  reporter    Compte   @relation("Reporters", fields: [reporter_id], references: [id])
 
   @@unique([reporter_id, reported_id])
+  @@index([reported_id], map: "reports_reported_id_fkey")
   @@map("reports")
 }
 
@@ -125,12 +145,13 @@ model Note {
   note      String
   noter_id  Int
   noted_id  Int
-  noter     Compte   @relation("Noters", fields: [noter_id], references: [id])
-  noted     Compte   @relation("Noteds", fields: [noted_id], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+  noted     Compte   @relation("Noteds", fields: [noted_id], references: [id])
+  noter     Compte   @relation("Noters", fields: [noter_id], references: [id])
 
   @@unique([noter_id, noted_id])
+  @@index([noted_id], map: "notes_noted_id_fkey")
   @@map("notes")
 }
 
@@ -138,18 +159,14 @@ model Bloquer {
   id         Int      @id @default(autoincrement())
   blocker_id Int
   blocked_id Int
-  blocker    Compte   @relation("Blockers", fields: [blocker_id], references: [id])
-  blocked    Compte   @relation("Blockeds", fields: [blocked_id], references: [id])
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now())
+  blocked    Compte   @relation("Blockeds", fields: [blocked_id], references: [id])
+  blocker    Compte   @relation("Blockers", fields: [blocker_id], references: [id])
 
   @@unique([blocker_id, blocked_id])
+  @@index([blocked_id], map: "bloquers_blocked_id_fkey")
   @@map("bloquers")
-}
-
-enum StatusFollow {
-  FOLLOWED
-  UNFOLLOWED
 }
 
 model Follow {
@@ -157,12 +174,13 @@ model Follow {
   status      StatusFollow
   follower_id Int
   followed_id Int
-  follower    Compte       @relation("Followers", fields: [follower_id], references: [id])
-  followed    Compte       @relation("Followeds", fields: [followed_id], references: [id])
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @default(now())
+  followed    Compte       @relation("Followeds", fields: [followed_id], references: [id])
+  follower    Compte       @relation("Followers", fields: [follower_id], references: [id])
 
   @@unique([follower_id, followed_id])
+  @@index([followed_id], map: "follows_followed_id_fkey")
   @@map("follows")
 }
 
@@ -171,24 +189,14 @@ model Message {
   texte       String
   messager_id Int
   messaged_id Int
-  messager    Compte   @relation("Messagers", fields: [messager_id], references: [id])
-  messaged    Compte   @relation("Messageds", fields: [messaged_id], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now())
+  messaged    Compte   @relation("Messageds", fields: [messaged_id], references: [id])
+  messager    Compte   @relation("Messagers", fields: [messager_id], references: [id])
 
-  @@unique([messager_id, messaged_id])
+  @@index([messaged_id], map: "messages_messaged_id_fkey")
+  @@index([messager_id], map: "messages_messager_id_fkey")
   @@map("messages")
-}
-
-enum CategoriePost {
-  IMAGE
-  VIDEO
-}
-
-enum StatusPost {
-  PUBLIE
-  PAS_PUBLIE
-  ARCHIVE
 }
 
 model Status {
@@ -198,9 +206,11 @@ model Status {
   duration    String
   viewNb      Int
   tailleur_id Int
-  tailleur    Tailleur @relation(fields: [tailleur_id], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now())
+  tailleur    Tailleur @relation(fields: [tailleur_id], references: [id])
+
+  @@index([tailleur_id], map: "status_tailleur_id_fkey")
   @@map("status")
 }
 
@@ -215,17 +225,18 @@ model Post {
   tailleur_id Int
   status      StatusPost
   categorie   CategoriePost
-  tailleur    Tailleur      @relation(fields: [tailleur_id], references: [id])
-  tags        Tag[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now())
+  Commande    Commande[]
   comments    Comment[]
   favoris     Favori[]
   likes       Like[]
-  tissupost   TissuPost[]
-  taillepost  TaillePost[]
-  commande    Commande[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @default(now())
+  tailleur    Tailleur      @relation(fields: [tailleur_id], references: [id])
+  tags        Tag[]
+  TaillePost  TaillePost[]
+  TissuPost   TissuPost[]
 
+  @@index([tailleur_id], map: "posts_tailleur_id_fkey")
   @@map("posts")
 }
 
@@ -233,10 +244,11 @@ model Tag {
   id        Int      @id @default(autoincrement())
   libelle   String
   post_id   Int
-  post      Post     @relation(fields: [post_id], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+  post      Post     @relation(fields: [post_id], references: [id])
 
+  @@index([post_id], map: "tags_post_id_fkey")
   @@map("tags")
 }
 
@@ -245,12 +257,14 @@ model Comment {
   content   String
   post_id   Int
   compte_id Int
-  post      Post              @relation(fields: [post_id], references: [id])
-  compte    Compte            @relation(fields: [compte_id], references: [id])
-  responses CommentResponse[]
   createdAt DateTime          @default(now())
   updatedAt DateTime          @default(now())
+  responses CommentResponse[]
+  compte    Compte            @relation(fields: [compte_id], references: [id])
+  post      Post              @relation(fields: [post_id], references: [id])
 
+  @@index([compte_id], map: "comments_compte_id_fkey")
+  @@index([post_id], map: "comments_post_id_fkey")
   @@map("comments")
 }
 
@@ -258,10 +272,11 @@ model CommentResponse {
   id         Int      @id @default(autoincrement())
   content    String
   comment_id Int
-  comment    Comment  @relation(fields: [comment_id], references: [id])
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now())
+  comment    Comment  @relation(fields: [comment_id], references: [id])
 
+  @@index([comment_id], map: "comment_responses_comment_id_fkey")
   @@map("comment_responses")
 }
 
@@ -269,18 +284,14 @@ model Favori {
   id        Int      @id @default(autoincrement())
   compte_id Int
   post_id   Int
-  post      Post     @relation(fields: [post_id], references: [id])
-  compte    Compte   @relation(fields: [compte_id], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+  compte    Compte   @relation(fields: [compte_id], references: [id])
+  post      Post     @relation(fields: [post_id], references: [id])
 
+  @@index([compte_id], map: "favoris_compte_id_fkey")
+  @@index([post_id], map: "favoris_post_id_fkey")
   @@map("favoris")
-}
-
-enum etatLike {
-  LIKE
-  DISLIKE
-  UNLIKE
 }
 
 model Like {
@@ -288,11 +299,13 @@ model Like {
   etat      etatLike
   compte_id Int
   post_id   Int
-  post      Post     @relation(fields: [post_id], references: [id])
-  compte    Compte   @relation(fields: [compte_id], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+  compte    Compte   @relation(fields: [compte_id], references: [id])
+  post      Post     @relation(fields: [post_id], references: [id])
 
+  @@index([compte_id], map: "likes_compte_id_fkey")
+  @@index([post_id], map: "likes_post_id_fkey")
   @@map("likes")
 }
 
@@ -300,16 +313,12 @@ model Notification {
   id        Int      @id @default(autoincrement())
   content   String
   compte_id Int
-  compte    Compte   @relation(fields: [compte_id], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+  compte    Compte   @relation(fields: [compte_id], references: [id])
 
+  @@index([compte_id], map: "notifications_compte_id_fkey")
   @@map("notifications")
-}
-
-enum etatCommande {
-  TERMINER
-  EN_ATTENTE
 }
 
 model CommandeArticle {
@@ -318,12 +327,13 @@ model CommandeArticle {
   numero          String
   montantTotal    Decimal                 @db.Decimal(10, 2)
   tailleur_id     Int
-  tailleur        Tailleur                @relation(fields: [tailleur_id], references: [id])
-  paiement        PaiementArticle[]
-  detailcommandes DetailCommandeArticle[]
   createdAt       DateTime                @default(now())
   updatedAt       DateTime                @default(now())
+  tailleur        Tailleur                @relation(fields: [tailleur_id], references: [id])
+  detailcommandes DetailCommandeArticle[]
+  paiement        PaiementArticle[]
 
+  @@index([tailleur_id], map: "commande_articles_tailleur_id_fkey")
   @@map("commande_articles")
 }
 
@@ -332,13 +342,15 @@ model Stock {
   prix        Decimal     @db.Decimal(10, 2)
   qte         Int
   article_id  Int
-  article     Article     @relation(fields: [article_id], references: [id])
   tailleur_id Int
-  tailleur    Tailleur    @relation(fields: [tailleur_id], references: [id])
-  tissupost   TissuPost[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @default(now())
+  article     Article     @relation(fields: [article_id], references: [id])
+  tailleur    Tailleur    @relation(fields: [tailleur_id], references: [id])
+  tissupost   TissuPost[]
 
+  @@index([article_id], map: "stocks_article_id_fkey")
+  @@index([tailleur_id], map: "stocks_tailleur_id_fkey")
   @@map("stocks")
 }
 
@@ -347,18 +359,15 @@ model DetailCommandeArticle {
   qte         Int
   prix        Decimal         @db.Decimal(10, 2)
   article_id  Int
-  article     Article         @relation(fields: [article_id], references: [id])
   commande_id Int
-  commande    CommandeArticle @relation(fields: [commande_id], references: [id])
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @default(now())
+  article     Article         @relation(fields: [article_id], references: [id])
+  commande    CommandeArticle @relation(fields: [commande_id], references: [id])
 
+  @@index([article_id], map: "detail_commande_articles_article_id_fkey")
+  @@index([commande_id], map: "detail_commande_articles_commande_id_fkey")
   @@map("detail_commande_articles")
-}
-
-enum etatArticle {
-  DELETE
-  ACTIF
 }
 
 model Article {
@@ -368,29 +377,32 @@ model Article {
   image           Json
   description     String
   slug            String                  @unique
-  detailcommandes DetailCommandeArticle[]
-  article_unite   ArticleUnite[]
   categorie_id    Int
-  categorie       Categorie               @relation(fields: [categorie_id], references: [id])
   vendeur_id      Int
-  vendeur         Vendeur                 @relation(fields: [vendeur_id], references: [id])
-  couleur_article CouleurArticle[]
-  stock           Stock[]
   createdAt       DateTime                @default(now())
   updatedAt       DateTime                @default(now())
+  article_unite   ArticleUnite[]
+  categorie       Categorie               @relation(fields: [categorie_id], references: [id])
+  vendeur         Vendeur                 @relation(fields: [vendeur_id], references: [id])
+  couleur_article CouleurArticle[]
+  detailcommandes DetailCommandeArticle[]
+  stock           Stock[]
 
+  @@index([categorie_id], map: "articles_categorie_id_fkey")
+  @@index([vendeur_id], map: "articles_vendeur_id_fkey")
   @@map("articles")
 }
 
 model Unite {
   id            Int            @id @default(autoincrement())
   libelle       String
-  article_unite ArticleUnite[]
   categorie_id  Int
-  categorie     Categorie      @relation(fields: [categorie_id], references: [id])
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @default(now())
+  article_unite ArticleUnite[]
+  categorie     Categorie      @relation(fields: [categorie_id], references: [id])
 
+  @@index([categorie_id], map: "unites_categorie_id_fkey")
   @@map("unites")
 }
 
@@ -399,9 +411,13 @@ model PaiementArticle {
   montant     Decimal         @db.Decimal(10, 2)
   commande_id Int
   commande    CommandeArticle @relation(fields: [commande_id], references: [id])
+  tailleur_id Int
+  tailleur    Tailleur      @relation(fields: [tailleur_id], references: [id])
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @default(now())
+  commande    CommandeArticle @relation(fields: [commande_id], references: [id])
 
+  @@index([commande_id], map: "paiements_articles_commande_id_fkey")
   @@map("paiements_articles")
 }
 
@@ -410,22 +426,24 @@ model ArticleUnite {
   prix       Int
   qte        Int
   article_id Int
-  article    Article  @relation(fields: [article_id], references: [id])
   unite_id   Int
-  unite      Unite    @relation(fields: [unite_id], references: [id])
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now())
+  article    Article  @relation(fields: [article_id], references: [id])
+  unite      Unite    @relation(fields: [unite_id], references: [id])
 
+  @@index([article_id], map: "article_unites_article_id_fkey")
+  @@index([unite_id], map: "article_unites_unite_id_fkey")
   @@map("article_unites")
 }
 
 model Categorie {
   id         Int       @id @default(autoincrement())
   libelle    String
-  article    Article[]
-  categories Unite[]
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @default(now())
+  article    Article[]
+  categories Unite[]
 
   @@map("categories")
 }
@@ -433,10 +451,10 @@ model Categorie {
 model Vendeur {
   id        Int       @id @default(autoincrement())
   compte_id Int       @unique
-  compte    Compte    @relation(fields: [compte_id], references: [id])
-  articles  Article[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @default(now())
+  articles  Article[]
+  compte    Compte    @relation(fields: [compte_id], references: [id])
 
   @@map("vendeurs")
 }
@@ -444,9 +462,9 @@ model Vendeur {
 model Couleur {
   id              Int              @id @default(autoincrement())
   libelle         String
-  couleur_article CouleurArticle[]
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @default(now())
+  couleur_article CouleurArticle[]
 
   @@map("couleurs")
 }
@@ -454,24 +472,28 @@ model Couleur {
 model CouleurArticle {
   id         Int      @id @default(autoincrement())
   article_id Int
-  article    Article  @relation(fields: [article_id], references: [id])
   couleur_id Int
-  couleur    Couleur  @relation(fields: [couleur_id], references: [id])
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now())
+  article    Article  @relation(fields: [article_id], references: [id])
+  couleur    Couleur  @relation(fields: [couleur_id], references: [id])
 
+  @@index([article_id], map: "couleur_articles_article_id_fkey")
+  @@index([couleur_id], map: "couleur_articles_couleur_id_fkey")
   @@map("couleur_articles")
 }
 
 model TissuPost {
   id        Int      @id @default(autoincrement())
   stock_id  Int
-  stock     Stock    @relation(fields: [stock_id], references: [id])
   post_id   Int
-  post      Post     @relation(fields: [post_id], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+  post      Post     @relation(fields: [post_id], references: [id])
+  stock     Stock    @relation(fields: [stock_id], references: [id])
 
+  @@index([post_id], map: "tissu_posts_post_id_fkey")
+  @@index([stock_id], map: "tissu_posts_stock_id_fkey")
   @@map("tissu_posts")
 }
 
@@ -479,9 +501,9 @@ model Taille {
   id         Int          @id @default(autoincrement())
   libelle    String
   qte        String
-  taillepost TaillePost[]
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @default(now())
+  taillepost TaillePost[]
 
   @@map("tailles")
 }
@@ -489,25 +511,29 @@ model Taille {
 model TaillePost {
   id        Int      @id @default(autoincrement())
   taille_id Int
-  taille    Taille   @relation(fields: [taille_id], references: [id])
   post_id   Int
-  post      Post     @relation(fields: [post_id], references: [id])
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+  post      Post     @relation(fields: [post_id], references: [id])
+  taille    Taille   @relation(fields: [taille_id], references: [id])
 
+  @@index([post_id], map: "taille_posts_post_id_fkey")
+  @@index([taille_id], map: "taille_posts_taille_id_fkey")
   @@map("taille_posts")
 }
 
 model Commande {
   id        Int        @id @default(autoincrement())
   post_id   Int
-  post      Post       @relation(fields: [post_id], references: [id])
   compte_id Int
-  compte    Compte     @relation(fields: [compte_id], references: [id])
-  paiement  Paiement[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @default(now())
+  compte    Compte     @relation(fields: [compte_id], references: [id])
+  post      Post       @relation(fields: [post_id], references: [id])
+  paiement  Paiement[]
 
+  @@index([compte_id], map: "commandes_compte_id_fkey")
+  @@index([post_id], map: "commandes_post_id_fkey")
   @@map("commandes")
 }
 
@@ -515,19 +541,41 @@ model Paiement {
   id          Int      @id @default(autoincrement())
   montant     Decimal  @db.Decimal(10, 2)
   commande_id Int
-  commande    Commande @relation(fields: [commande_id], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now())
+  commande    Commande @relation(fields: [commande_id], references: [id])
 
+  @@index([commande_id], map: "paiements_commande_id_fkey")
   @@map("paiements")
 }
 
+enum StatusFollow {
+  FOLLOWED
+  UNFOLLOWED
+}
 
-// model X {
-//   id        Int      @id @default(autoincrement())
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @default(now())
-// }
+enum CategoriePost {
+  IMAGE
+  VIDEO
+}
 
+enum StatusPost {
+  PUBLIE
+  PAS_PUBLIE
+  ARCHIVE
+}
 
+enum etatLike {
+  LIKE
+  DISLIKE
+}
 
+enum etatCommande {
+  TERMINER
+  EN_ATTENTE
+}
+
+enum etatArticle {
+  DELETE
+  ACTIF
+}

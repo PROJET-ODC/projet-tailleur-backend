@@ -1,5 +1,5 @@
 import express from "express";
-import {isVendeurAuthenticated} from "../middleware/authVendeur.js";
+import { isVendeurAuthenticated } from "../middleware/authVendeur.js";
 import vendeurController from "../controller/VendeurController.js";
 const router = express.Router();
 
@@ -16,4 +16,6 @@ router.route('/commandes')
 router.route('/commandes/validate')
     .post(vendeurController.validateCommandes);
 
-export {router};
+router.route('/listcommandes')
+    .get(vendeurController.listCommandes);
+export { router };

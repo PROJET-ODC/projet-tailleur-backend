@@ -1,8 +1,8 @@
 import { Favori, Comment, CommentResponse, Post, Report, Compte } from '@prisma/client';
 import { PrismaClient } from '@prisma/client';
-
-import { Request, Response } from 'express';
 import { ControllerRequest } from "../interface/Interface.js";
+import {Response } from "express";
+
 
 const prisma = new PrismaClient();
 
@@ -14,6 +14,167 @@ class ClientController {
             if (key !== 'constructor' && typeof val === 'function') {
                 (this as any)[key] = val.bind(this);
             }
+        }
+    }
+  
+    // Ajouter un like$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+    async addLike(req: ControllerRequest, res:Response) {
+        try {
+            const postId = parseInt(req.body.postId);
+            const compteId = parseInt(req.body.compteId);
+
+            // Vérifie si un like/dislike existe déjà pour ce post et ce compte
+            const existingLike = await prisma.like.findFirst({
+                where: { post_id: postId, compte_id: compteId }
+            });
+
+            if (existingLike) {
+                if (existingLike.etat === 'LIKE') {
+                    // Si l'état est LIKE, supprimer le like
+                    await prisma.like.delete({
+                        where: { id: existingLike.id }
+                    });
+
+                    return res.status(200).json({
+                        message: 'Like supprimé avec succès',
+                        status: 'OK'
+                    });
+                } else if (existingLike.etat === 'DISLIKE') {
+                    // Si l'état est DISLIKE, le mettre à jour en LIKE
+                    const updatedLike = await prisma.like.update({
+                        where: { id: existingLike.id },
+                        data: { etat: 'LIKE', updatedAt: new Date() }
+                    });
+
+                    return res.status(200).json({
+                        message: 'État changé de dislike à like',
+                        data: updatedLike,
+                        status: 'OK'
+                    });
+                }
+            } else {
+                // Crée un nouveau like si aucun n'existe
+                const newLike = await prisma.like.create({
+                    data: {
+                        post_id: postId,
+                        compte_id: compteId,
+                        etat: 'LIKE',
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    }
+                });
+
+                return res.status(201).json({ message: 'Like ajouté avec succès', data: newLike, status: 'OK' });
+            }
+        } catch (err) {
+            if(err instanceof Error) {
+                return res.status(500).json({ message: err.message, status: 'KO' });
+            }
+        }
+    }
+
+
+    // Ajouter un dislike$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+    async addDislike(req:ControllerRequest, res: Response) {
+        try {
+            const postId = parseInt(req.body.postId);
+            const compteId = parseInt(req.body.compteId);
+
+            const existingDislike = await prisma.like.findFirst({
+                where: { post_id: postId, compte_id: compteId }
+            });
+
+            if (existingDislike) {
+                if (existingDislike.etat === 'DISLIKE') {
+                    await prisma.like.delete({
+                        where: { id: existingDislike.id }
+                    });
+
+                    return res.status(200).json({
+                        message: 'Dislike supprimé avec succès',
+                        status: 'OK'
+                    });
+                } else if (existingDislike.etat === 'LIKE') {
+                    await prisma.like.update({
+                        where: { id: existingDislike.id },
+                        data: { etat: 'DISLIKE', updatedAt: new Date() }
+                    });
+
+                    return res.status(200).json({
+                        message: 'État changé de like à dislike',
+                        data: existingDislike,
+                        status: 'OK'
+                    });
+                }
+            } else {
+                const newDislike = await prisma.like.create({
+                    data: {
+                        post_id: postId,
+                        compte_id: compteId,
+                        etat: 'DISLIKE',
+                        createdAt: new Date(),
+                        updatedAt: new Date()
+                    }
+                });
+
+                return res.status(201).json({ message: 'Dislike ajouté avec succès', data: newDislike, status: 'OK' });
+            }
+        } catch (err) {
+            if(err instanceof Error) {
+                return res.status(500).json({ message: err.message, status: 'KO' });
+             }
+        }
+    }
+   
+
+    // $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+    async getNotificationsForUser(req: ControllerRequest, res: Response) {
+        const userId = parseInt(req.id!);
+
+        try {
+            const notifications = await prisma.notification.findMany({
+                where: { compte_id: userId },  // Utilisation du champ correct `compte_id`
+            });
+
+            return res.status(200).json({ notifications, message: 'Notifications chargées.', status: 'OK' });
+        } catch (error) {
+            if(error instanceof Error) {
+                return res.status(500).json({ message: error.message, status: 'KO' });
+             }
+        }
+    }
+
+
+    async sendMessage(req: ControllerRequest, res: Response) {
+        try {
+            const {messaged_id, texte} = req.body;
+            const messager_id = parseInt(req.id!);  // Obtenez l'ID du client connecté depuis la requête `req.id`
+            // Utilisation du champ correct `id` du client connecté
+
+
+            const messaged_id1 = parseInt(messaged_id);
+
+            // Vérifiez que tous les champs requis sont présents
+            if (typeof messager_id !== 'number' || typeof messaged_id1 !== 'number' || typeof texte !== 'string') {
+                return res.status(400).json({ message: 'Les champs messager_id, messaged_id et texte sont requis et doivent être du bon type.', status: 'KO' });
+            }
+
+            // Créez un nouveau message
+            const newMessage = await prisma.message.create({
+                data: {
+                    messager_id,
+                    messaged_id: messaged_id1,
+                    texte,
+                  },
+            });
+
+            console.log(newMessage);
+
+            res.status(201).json({ message: 'Message envoyé', status: newMessage });
+        } catch (error) {
+           if(error instanceof Error) {
+                res.status(500).json({ message: error.message, status: 'KO' });
+             }
         }
     }
   
@@ -326,7 +487,6 @@ class ClientController {
         return myFollowersRecentStatus;
     }
 
-
     async getNewsFeed(req: ControllerRequest, res: Response){
         const compte_id = parseInt(req.id!);
         const now = Date.now();
@@ -369,8 +529,10 @@ class ClientController {
                 });
 
                 const myFollowersPost = await this.getMyFollowersPost(compte_id);
+
+                // return res.json(myFollowersPost);
+
                 const posts = myOwnPost.concat(myFollowersPost);
-                // return res.json(posts);
 
                 const myFollowersRecentStatus = await this.getMyFollowersRecentStatus(compte_id);
                 const recentStatus = myFollowersRecentStatus.concat(myOwnRecentStatus);
@@ -388,8 +550,49 @@ class ClientController {
         }
     }
 
-    // Afficher le profil de l'utilisateur
-    async userProfile(req: ControllerRequest, res: Response) {
+  
+   async ShareNb(req: ControllerRequest, res: Response) {
+                try {
+                    const postId = parseInt(req.id!);
+    
+                    const post = await prisma.post.update({
+                        where: { id: postId },
+                        data: { shareNb: { increment: 1 } },
+                        select: { shareNb: true },
+                    });
+    
+                    if (!post) {
+                        return res.status(404).json({ message: 'Post non trouvé après mise à jour', status: 'KO' });
+                    }
+    
+                    return res.status(200).json({ message: 'Partage réussi.', data: { shareNb: post.shareNb }, status: 'OK' });
+                } catch (error:any) {
+                    return res.status(500).json({ message: 'Erreur lors du partage.', error: error.message, status: 'KO' });
+                }
+    }
+    
+    async ViewsNb(req: ControllerRequest, res: Response) {
+        try {
+            const postId = parseInt(req.id!);
+    
+            const post = await prisma.post.update({
+                where: { id: postId },
+                data: { viewNb: { increment: 1 } },
+                select: { viewNb: true },
+            });
+    
+            return res.json({ message: 'Post Vu', status: 'OK', post });
+        } catch (error:any) {
+            // Vérifie si l'erreur est liée à l'absence du post
+            if (error.code === 'P2025') {
+                return res.status(404).json({ message: 'Post non trouvé', status: 'KO' });
+            }
+            return res.status(500).json({ message: error.message, status: 'KO' });
+        }
+    }
+  
+  
+    async createCommande(req: ControllerRequest, res: Response) {
         try {
             // const id = req.id;
             const id = parseInt(req.id as string, 10);
@@ -497,7 +700,7 @@ class ClientController {
     
     async follow(req: ControllerRequest, res: Response) {
         try {
-            const { idFollowedCompte } = req.body;
+           const { idFollowedCompte } = req.body;
             const idCompte = req.id ? parseInt(req.id, 10) : undefined;
     
             if (idCompte === undefined) {
@@ -537,15 +740,110 @@ class ClientController {
                     },
                     updatedAt: new Date(),
                 },
-            });
-    
-            return res.json({ message: "Vous avez suivi l'utilisateur", status: 'OK' });
-    
+            })
+
+             return res.json({ message: "Vous avez suivi l'utilisateur", status: 'OK' })
         } catch (error) {
-            return res.status(500).json({ message: 'Une erreur est survenue', status: 'KO'});
+            if(error instanceof Error) {
+                return res.status(500).json({ message: 'Error adding measure', error: error.message });
+            }
         }
     }
-    
+
+    async addNote(req: ControllerRequest, res: Response) {
+        try {
+            const { noter_id, noted_id,note} = req.body;
+
+            const notes = await prisma.note.create({
+                data: {
+                    noter_id: parseInt(noter_id, 10),
+                    noted_id: parseInt(noted_id, 10),
+                    note: note,  // Assurez-vous que la valeur est correcte
+                },
+            });
+
+            return res.status(201).json({ message: 'Note ajoutée avec succès.', data:notes });
+        } catch (error) {
+            if(error instanceof Error) {
+                return res.status(500).json({ message: error.message });
+            }
+        }
+    }
+
+    async userProfile(req:ControllerRequest, res:Response) {
+        try {
+            const id = parseInt(req.id!);
+            const compte = await prisma.compte.findUnique({
+                where: { id },
+            });
+            const user = await prisma.user.findUnique({
+                where: { id: compte?.user_id },
+            });
+            if (compte?.role === 'tailleur') {
+                const tailleur = await prisma.tailleur.findUnique({
+                    where: { compte_id: id },
+                });
+                const posts = await prisma.post.findMany({
+                    where: {
+                        AND: [
+                            { tailleur_id: tailleur?.id },
+                            { status: 'PUBLIE' }
+                        ]
+                    },
+                });
+
+                const notes = await prisma.note.findMany({
+                    where: {
+                        noted_id: id,
+                    },
+                    select: {
+                        note: true,
+                    }
+                });
+
+                const followeds = await prisma.follow.findMany({
+                    where: {
+                        AND: [
+                            {followed_id: id},
+                            {status: "FOLLOWED"}
+                        ]
+                    }
+                });
+
+                const followers = await prisma.follow.findMany({
+                    where: {
+                        AND:[
+                            {follower_id: id},
+                            {status: "FOLLOWED"}
+                        ]
+                    }
+                });
+
+                const totalDesNotes = notes.reduce((somme, note) => {
+                    return somme + parseFloat(note.note); // Convertit chaque note en nombre et fait la somme
+                }, 0);
+
+                const noteToShow = (totalDesNotes / notes.length) || 0;
+
+                if (!tailleur || !user || !compte) {
+                    return res.status(404).json({ message: 'Impossible de charger le profile demandé', status: 'KO' });
+                }
+                return res.json({ tailleur, user, compte, posts,noteToShow,nbrAbonnee: followers.length, nbrAbonnement: followeds.length, message:'Donnée du profil retrouvé', status: 'OK' });
+            }
+            const client = await prisma.client.findUnique({
+                where: { compte_id: id },
+            });
+            if (!client || !user || !compte) {
+                return res.status(404).json({ message: 'Impossible de charger le profile demandé', status: 'KO' });
+            }
+            const followersPosts = await this.getMyFollowersPost(compte.id);
+            return res.json({ client, user, compte, followersPosts, status: 'OK' });
+        }
+        catch (error) {
+            return res.status(500).json({ message: 'Erreur interne du serveur', status: 'KO' });
+        }
+    }
+   
     async getPostById(req: ControllerRequest, res: Response) {
         try {
             const postId = parseInt(req.params.id, 10); // Conversion de l'ID en nombre
@@ -699,6 +997,5 @@ class ClientController {
     }
    
   }
-
 
 export default new ClientController();
