@@ -22,5 +22,9 @@ router.route('/approvisions')
     // .post(tailleurController.addApprovisions);
 router.route('/approvisions/details').get(tailleurController.detailsApprovisions);
 
+// Route to list articles by category
+router.get('/categories/:categoryId/articles', tailleurController.listArticlesByCategory);
+router.route('/articles/:slug').get(tailleurController.getArticleBySlug);
+
 export {router};
 
