@@ -14,6 +14,17 @@ CREATE TABLE `users` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `conversion_credits` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `credit` INTEGER NOT NULL,
+    `prix` DECIMAL(10, 2) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `comptes` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `email` VARCHAR(191) NOT NULL,
@@ -56,9 +67,30 @@ CREATE TABLE `clients` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `admins` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `nom` VARCHAR(191) NOT NULL,
+    `prenom` VARCHAR(191) NOT NULL,
+    `compte_id` INTEGER NOT NULL,
+    `revenu` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    UNIQUE INDEX `admins_compte_id_key`(`compte_id`),
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `mesures` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `compte_id` INTEGER NOT NULL,
+    `Epaule` DOUBLE NULL,
+    `Manche` DOUBLE NULL,
+    `Longueur` DOUBLE NULL,
+    `Poitrine` DOUBLE NULL,
+    `Fesse` DOUBLE NULL,
+    `Taille` DOUBLE NULL,
+    `Cou` DOUBLE NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
@@ -130,7 +162,7 @@ CREATE TABLE `messages` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `Status` (
+CREATE TABLE `status` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `files` JSON NOT NULL,
     `description` VARCHAR(191) NOT NULL,
@@ -185,7 +217,7 @@ CREATE TABLE `comments` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
-CREATE TABLE `CommentResponse` (
+CREATE TABLE `comment_responses` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `content` VARCHAR(191) NOT NULL,
     `comment_id` INTEGER NOT NULL,
@@ -234,7 +266,7 @@ CREATE TABLE `commande_articles` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `etat` ENUM('TERMINER', 'EN_ATTENTE') NOT NULL,
     `numero` VARCHAR(191) NOT NULL,
-    `montantTotal` DECIMAL(65, 30) NOT NULL,
+    `montantTotal` DECIMAL(10, 2) NOT NULL,
     `tailleur_id` INTEGER NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -245,9 +277,10 @@ CREATE TABLE `commande_articles` (
 -- CreateTable
 CREATE TABLE `stocks` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `prix` DECIMAL(65, 30) NOT NULL,
+    `prix` DECIMAL(10, 2) NOT NULL,
     `qte` INTEGER NOT NULL,
     `article_id` INTEGER NOT NULL,
+    `tailleur_id` INTEGER NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
@@ -258,7 +291,7 @@ CREATE TABLE `stocks` (
 CREATE TABLE `detail_commande_articles` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `qte` INTEGER NOT NULL,
-    `prix` DECIMAL(65, 30) NOT NULL,
+    `prix` DECIMAL(10, 2) NOT NULL,
     `article_id` INTEGER NOT NULL,
     `commande_id` INTEGER NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -274,8 +307,6 @@ CREATE TABLE `articles` (
     `etat` ENUM('DELETE', 'ACTIF') NOT NULL,
     `image` JSON NOT NULL,
     `description` VARCHAR(191) NOT NULL,
-    `prix` DECIMAL(65, 30) NOT NULL,
-    `qte` INTEGER NOT NULL,
     `slug` VARCHAR(191) NOT NULL,
     `categorie_id` INTEGER NOT NULL,
     `vendeur_id` INTEGER NOT NULL,
@@ -300,7 +331,7 @@ CREATE TABLE `unites` (
 -- CreateTable
 CREATE TABLE `paiements_articles` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `montant` DECIMAL(65, 30) NOT NULL,
+    `montant` DECIMAL(10, 2) NOT NULL,
     `commande_id` INTEGER NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -312,6 +343,7 @@ CREATE TABLE `paiements_articles` (
 CREATE TABLE `article_unites` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `prix` INTEGER NOT NULL,
+    `qte` INTEGER NOT NULL,
     `article_id` INTEGER NOT NULL,
     `unite_id` INTEGER NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
@@ -344,6 +376,7 @@ CREATE TABLE `vendeurs` (
 -- CreateTable
 CREATE TABLE `couleurs` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `libelle` VARCHAR(191) NOT NULL,
     `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
 
@@ -361,6 +394,61 @@ CREATE TABLE `couleur_articles` (
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+-- CreateTable
+CREATE TABLE `tissu_posts` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `stock_id` INTEGER NOT NULL,
+    `post_id` INTEGER NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `tailles` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `libelle` VARCHAR(191) NOT NULL,
+    `qte` VARCHAR(191) NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `taille_posts` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `taille_id` INTEGER NOT NULL,
+    `post_id` INTEGER NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `commandes` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `post_id` INTEGER NOT NULL,
+    `compte_id` INTEGER NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
+CREATE TABLE `paiements` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `montant` DECIMAL(10, 2) NOT NULL,
+    `commande_id` INTEGER NOT NULL,
+    `createdAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+    `updatedAt` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
 -- AddForeignKey
 ALTER TABLE `comptes` ADD CONSTRAINT `comptes_user_id_fkey` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
@@ -369,6 +457,9 @@ ALTER TABLE `tailleurs` ADD CONSTRAINT `tailleurs_compte_id_fkey` FOREIGN KEY (`
 
 -- AddForeignKey
 ALTER TABLE `clients` ADD CONSTRAINT `clients_compte_id_fkey` FOREIGN KEY (`compte_id`) REFERENCES `comptes`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `admins` ADD CONSTRAINT `admins_compte_id_fkey` FOREIGN KEY (`compte_id`) REFERENCES `comptes`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `mesures` ADD CONSTRAINT `mesures_compte_id_fkey` FOREIGN KEY (`compte_id`) REFERENCES `comptes`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -404,7 +495,7 @@ ALTER TABLE `messages` ADD CONSTRAINT `messages_messager_id_fkey` FOREIGN KEY (`
 ALTER TABLE `messages` ADD CONSTRAINT `messages_messaged_id_fkey` FOREIGN KEY (`messaged_id`) REFERENCES `comptes`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Status` ADD CONSTRAINT `Status_tailleur_id_fkey` FOREIGN KEY (`tailleur_id`) REFERENCES `tailleurs`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `status` ADD CONSTRAINT `status_tailleur_id_fkey` FOREIGN KEY (`tailleur_id`) REFERENCES `tailleurs`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `posts` ADD CONSTRAINT `posts_tailleur_id_fkey` FOREIGN KEY (`tailleur_id`) REFERENCES `tailleurs`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -419,7 +510,7 @@ ALTER TABLE `comments` ADD CONSTRAINT `comments_post_id_fkey` FOREIGN KEY (`post
 ALTER TABLE `comments` ADD CONSTRAINT `comments_compte_id_fkey` FOREIGN KEY (`compte_id`) REFERENCES `comptes`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `CommentResponse` ADD CONSTRAINT `CommentResponse_comment_id_fkey` FOREIGN KEY (`comment_id`) REFERENCES `comments`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `comment_responses` ADD CONSTRAINT `comment_responses_comment_id_fkey` FOREIGN KEY (`comment_id`) REFERENCES `comments`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `favoris` ADD CONSTRAINT `favoris_post_id_fkey` FOREIGN KEY (`post_id`) REFERENCES `posts`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -441,6 +532,9 @@ ALTER TABLE `commande_articles` ADD CONSTRAINT `commande_articles_tailleur_id_fk
 
 -- AddForeignKey
 ALTER TABLE `stocks` ADD CONSTRAINT `stocks_article_id_fkey` FOREIGN KEY (`article_id`) REFERENCES `articles`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `stocks` ADD CONSTRAINT `stocks_tailleur_id_fkey` FOREIGN KEY (`tailleur_id`) REFERENCES `tailleurs`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `detail_commande_articles` ADD CONSTRAINT `detail_commande_articles_article_id_fkey` FOREIGN KEY (`article_id`) REFERENCES `articles`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -474,3 +568,24 @@ ALTER TABLE `couleur_articles` ADD CONSTRAINT `couleur_articles_article_id_fkey`
 
 -- AddForeignKey
 ALTER TABLE `couleur_articles` ADD CONSTRAINT `couleur_articles_couleur_id_fkey` FOREIGN KEY (`couleur_id`) REFERENCES `couleurs`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `tissu_posts` ADD CONSTRAINT `tissu_posts_stock_id_fkey` FOREIGN KEY (`stock_id`) REFERENCES `stocks`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `tissu_posts` ADD CONSTRAINT `tissu_posts_post_id_fkey` FOREIGN KEY (`post_id`) REFERENCES `posts`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `taille_posts` ADD CONSTRAINT `taille_posts_taille_id_fkey` FOREIGN KEY (`taille_id`) REFERENCES `tailles`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `taille_posts` ADD CONSTRAINT `taille_posts_post_id_fkey` FOREIGN KEY (`post_id`) REFERENCES `posts`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `commandes` ADD CONSTRAINT `commandes_post_id_fkey` FOREIGN KEY (`post_id`) REFERENCES `posts`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `commandes` ADD CONSTRAINT `commandes_compte_id_fkey` FOREIGN KEY (`compte_id`) REFERENCES `comptes`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `paiements` ADD CONSTRAINT `paiements_commande_id_fkey` FOREIGN KEY (`commande_id`) REFERENCES `commandes`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

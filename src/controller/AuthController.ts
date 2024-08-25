@@ -158,6 +158,19 @@ class AuthController {
                     },
                 });
             }
+            if (role === "admin") {
+                await prisma.admin.create({
+                    data: {
+                        compte_id: compte.id, 
+                        nom: 'NomDeExemple', 
+                        prenom: 'PrenomDeExemple', 
+                        revenu: 0.00, 
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                });
+            }
+            
 
             res.status(201).json({ message: "L'inscription a réussi", status: "OK" });
         } catch (error) {
