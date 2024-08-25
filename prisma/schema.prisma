@@ -81,6 +81,7 @@ model Tailleur {
   status    Status[]
   commande  CommandeArticle[]
   stock     Stock[]
+  paiement        PaiementArticle[]
   createdAt DateTime          @default(now())
   updatedAt DateTime          @default(now())
 
@@ -406,6 +407,8 @@ model PaiementArticle {
   montant     Decimal         @db.Decimal(10, 2)
   commande_id Int
   commande    CommandeArticle @relation(fields: [commande_id], references: [id])
+  tailleur_id Int
+  tailleur    Tailleur      @relation(fields: [tailleur_id], references: [id])
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @default(now())
 

@@ -3,6 +3,7 @@ import fs from "fs";
 import { PrismaClient } from "@prisma/client";
 import { Response } from "express";
 import { ControllerRequest } from "../interface/Interface";
+import { Decimal } from '@prisma/client/runtime/library';
 
 const prisma = new PrismaClient();
 
@@ -235,6 +236,7 @@ class TailleurController {
             return res
                 .status(200)
                 .json({ message: "Crédit ajouté avec succès", compte: updatedCompte });
+
         } catch (error) {
             if (error instanceof Error) {
                 console.error("Erreur lors de l'achat de crédits:", error);
@@ -398,6 +400,65 @@ class TailleurController {
             res.status(500).json({ message: "Server error", status: "KO" });
         }
     }
+  
+   async addApprovisions(req: ControllerRequest, res: Response) {
+        const { montant, commande_id } = req.body;
+    
+        // Vérification des données requises
+        if (!montant || !commande_id) {
+            return res.status(400).json({ message: 'Montant et commande_id sont requis.', status: 'KO' });
+        }
+    
+        try {
+            // Convertir commande_id en entier
+            const commandeIdInt = parseInt(commande_id, 10);
+    
+            // Vérifier si la commande existe
+            const commande = await prisma.commandeArticle.findUnique({
+                where: { id: commandeIdInt },
+            });
+    
+            if (!commande) {
+                return res.status(404).json({ message: 'Commande non trouvée.', status: 'KO' });
+            }
+    
+            // Convertir le montant en Decimal
+            const montantDecimal = new Decimal(montant);
+    
+            // Vérifier si le montant est suffisant
+            if (montantDecimal.lessThan(commande.montantTotal)) {
+                return res.status(400).json({ message: 'Le montant du paiement est insuffisant.', status: 'KO' });
+            }
+    
+            // Vérifier si la commande est déjà terminée
+            if (commande.etat === "TERMINER") {
+                return res.status(400).json({ message: 'Commande déjà payé.', status: 'KO' });
+            }
+    
+            // Créer un nouvel enregistrement de paiement
+            const paiement = await prisma.paiementArticle.create({
+                data: {
+                    montant: montantDecimal.toNumber(), // Convertir en number pour stocker
+                    commande_id: commandeIdInt,
+                },
+            });
+    
+            console.log("Paiement créé :", paiement); // Log du paiement créé
+    
+            // Mettre à jour l'état de la commande à "TERMINER"
+            await prisma.commandeArticle.update({
+                where: { id: commandeIdInt },
+                data: { etat: 'TERMINER' }, // Utiliser la valeur correcte de l'énumération
+            });
+    
+            return res.json({ paiement, message: 'Paiement enregistré avec succès, merci d\'avoir choisir notre plateforme TechTailor.', status: 'OK' });
+    
+        } catch (err) {
+            console.error("Erreur lors de l'enregistrement du paiement :", err); // Log de l'erreur
+            return res.status(500).json({ message: 'Erreur lors de l\'enregistrement du paiement.', status: 'KO' });
+        }
+    }
+  
     // Method to fetch an article by slug
     async getArticleBySlug(req: ControllerRequest, res: Response) {
         try {
