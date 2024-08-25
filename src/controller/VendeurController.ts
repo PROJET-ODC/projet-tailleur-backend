@@ -179,6 +179,7 @@ class TailleurController {
         }
         return res.json({message: "Les quantités des articles ont été mises à jour avec succès", status:"OK"});
     }
+   
     async myCommandes (req: ControllerRequest, res: Response){
         const id = parseInt(req.id!);
         const vendeur = await prisma.vendeur.findUnique({

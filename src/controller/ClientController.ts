@@ -581,6 +581,7 @@ class ClientController {
         } catch (error: any) {
             return res.status(500).json({ message: 'Erreur lors de la suppression de la réponse de commentaire', status: 'KO' });
         }
+    }
 
     async getSomeProfile(req: ControllerRequest, res: Response) {
         const { identifiant } = req.params;
@@ -697,7 +698,7 @@ class ClientController {
         }
     }
    
-}
+  }
 
 
 export default new ClientController();

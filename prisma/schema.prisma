@@ -522,17 +522,12 @@ model Paiement {
   @@map("paiements")
 }
 
-model ConversionCredit {
-  id        Int      @id @default(autoincrement())
-  credit Int
-  prix Decimal @db.Decimal(10, 2)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-  @@map("conversion_credits")
-}
 
 // model X {
 //   id        Int      @id @default(autoincrement())
 //   createdAt DateTime @default(now())
 //   updatedAt DateTime @default(now())
 // }
+
+
+

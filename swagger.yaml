@@ -2576,9 +2576,9 @@ paths:
       tags:
         - Tailleur
       security:
-        - bearerAuth: [ ]
+        - bearerAuth: []
       responses:
-        "201":
+        "200":
           description: La liste des catégories d'articles.
           content:
             application/json:
@@ -2589,40 +2589,25 @@ paths:
                     type: array
                     items:
                       type: object
+                      properties:
+                        id:
+                          type: integer
+                        libelle:
+                          type: string
+                        createdAt:
+                          type: string
+                          format: date-time
+                        updatedAt:
+                          type: string
+                          format: date-time
                   message:
                     type: string
                     example: "La liste des catégories d'articles"
                   status:
                     type: string
                     example: "OK"
-        "400":
-          description: Requête invalide ou données manquantes.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Requête invalide. Les données de blocage sont manquantes ou incorrectes."
-                  status:
-                    type: string
-                    example: "KO"
-        "404":
-          description: Pas de Categorie.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: "Pas de commande."
-                  status:
-                    type: string
-                    example: "KO"
         "500":
-          description: Erreur interne du serveur.
+          description: Erreur lors de la récupération des catégories
           content:
             application/json:
               schema:
@@ -2630,10 +2615,11 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: "Erreur interne du serveur."
+                    example: "Erreur lors de la récupération des catégories"
                   status:
                     type: string
                     example: "KO"
+
 
   /api/v1/tailleur/articles:
     get:

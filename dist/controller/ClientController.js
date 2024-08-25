@@ -483,91 +483,87 @@ class ClientController {
         catch (error) {
             return res.status(500).json({ message: 'Erreur lors de la suppression de la réponse de commentaire', status: 'KO' });
         }
-        async;
-        getSomeProfile(req, ControllerRequest, res, Response);
-        {
-            const { identifiant } = req.params;
-            const idCompte = Number(req.id);
-            if (isNaN(idCompte)) {
-                return res.status(400).json({ message: 'ID de compte invalide', status: 'KO' });
-            }
-            try {
-                const compte = await prisma.compte.findUnique({
-                    where: { identifiant },
-                });
-                const user = await prisma.user.findUnique({
-                    where: { id: compte?.user_id },
-                });
-                if (compte?.role === 'tailleur') {
-                    const tailleur = await prisma.tailleur.findUnique({
-                        where: { compte_id: idCompte },
-                    });
-                    if (!tailleur || !user || !compte) {
-                        return res.status(404).json({ message: 'Impossible de charger le profile demandé', status: 'KO' });
-                    }
-                    return res.json({ tailleur, user, compte, status: 'OK' });
-                }
-                const client = await prisma.client.findUnique({
+    }
+    async getSomeProfile(req, res) {
+        const { identifiant } = req.params;
+        const idCompte = Number(req.id);
+        if (isNaN(idCompte)) {
+            return res.status(400).json({ message: 'ID de compte invalide', status: 'KO' });
+        }
+        try {
+            const compte = await prisma.compte.findUnique({
+                where: { identifiant },
+            });
+            const user = await prisma.user.findUnique({
+                where: { id: compte?.user_id },
+            });
+            if (compte?.role === 'tailleur') {
+                const tailleur = await prisma.tailleur.findUnique({
                     where: { compte_id: idCompte },
                 });
-                if (!client || !user || !compte) {
+                if (!tailleur || !user || !compte) {
                     return res.status(404).json({ message: 'Impossible de charger le profile demandé', status: 'KO' });
                 }
-                return res.json({ client, user, compte, status: 'OK' });
+                return res.json({ tailleur, user, compte, status: 'OK' });
             }
-            catch (err) {
-                return res.status(500).json({ message: 'Erreur interne du serveur', status: 'KO' });
+            const client = await prisma.client.findUnique({
+                where: { compte_id: idCompte },
+            });
+            if (!client || !user || !compte) {
+                return res.status(404).json({ message: 'Impossible de charger le profile demandé', status: 'KO' });
             }
+            return res.json({ client, user, compte, status: 'OK' });
         }
-        async;
-        bloquer(req, ControllerRequest, res, Response);
-        {
-            try {
-                const { userIdToBlock } = req.body;
-                const tailleurId = req.id;
-                if (!tailleurId) {
-                    return res.status(401).json({ message: "Utilisateur non authentifié", status: 'KO' });
-                }
-                const tailleur = await prisma.compte.findUnique({
-                    where: { id: parseInt(tailleurId, 10) },
-                    select: { role: true }
-                });
-                if (!tailleur || tailleur.role !== 'tailleur') {
-                    return res.status(403).json({
-                        message: "Accès refusé. Seuls les tailleurs peuvent bloquer des utilisateurs.",
-                        status: 'KO'
-                    });
-                }
-                const userToBlock = await prisma.compte.findUnique({
-                    where: { id: parseInt(userIdToBlock, 10) }
-                });
-                if (!userToBlock) {
-                    return res.status(404).json({ message: "Utilisateur à bloquer introuvable.", status: 'KO' });
-                }
-                const isFollowed = await prisma.follow.findFirst({
-                    where: {
-                        follower_id: parseInt(tailleurId, 10),
-                        followed_id: parseInt(userIdToBlock, 10)
-                    }
-                });
-                if (!isFollowed) {
-                    return res.status(403).json({
-                        message: "Vous ne pouvez bloquer que des utilisateurs que vous suivez.",
-                        status: 'KO'
-                    });
-                }
-                const newBloquer = await prisma.bloquer.create({
-                    data: {
-                        blocker_id: parseInt(tailleurId, 10),
-                        blocked_id: parseInt(userIdToBlock, 10)
-                    }
-                });
-                res.status(200).json({ message: "L'utilisateur a été bloqué avec succès.", status: 'OK' });
+        catch (err) {
+            return res.status(500).json({ message: 'Erreur interne du serveur', status: 'KO' });
+        }
+    }
+    async bloquer(req, res) {
+        try {
+            const { userIdToBlock } = req.body;
+            const tailleurId = req.id;
+            if (!tailleurId) {
+                return res.status(401).json({ message: "Utilisateur non authentifié", status: 'KO' });
             }
-            catch (error) {
-                console.error('Erreur lors du blocage de l\'utilisateur:', error);
-                res.status(500).json({ message: 'Erreur lors du blocage de l\'utilisateur', status: 'KO' });
+            const tailleur = await prisma.compte.findUnique({
+                where: { id: parseInt(tailleurId, 10) },
+                select: { role: true }
+            });
+            if (!tailleur || tailleur.role !== 'tailleur') {
+                return res.status(403).json({
+                    message: "Accès refusé. Seuls les tailleurs peuvent bloquer des utilisateurs.",
+                    status: 'KO'
+                });
             }
+            const userToBlock = await prisma.compte.findUnique({
+                where: { id: parseInt(userIdToBlock, 10) }
+            });
+            if (!userToBlock) {
+                return res.status(404).json({ message: "Utilisateur à bloquer introuvable.", status: 'KO' });
+            }
+            const isFollowed = await prisma.follow.findFirst({
+                where: {
+                    follower_id: parseInt(tailleurId, 10),
+                    followed_id: parseInt(userIdToBlock, 10)
+                }
+            });
+            if (!isFollowed) {
+                return res.status(403).json({
+                    message: "Vous ne pouvez bloquer que des utilisateurs que vous suivez.",
+                    status: 'KO'
+                });
+            }
+            const newBloquer = await prisma.bloquer.create({
+                data: {
+                    blocker_id: parseInt(tailleurId, 10),
+                    blocked_id: parseInt(userIdToBlock, 10)
+                }
+            });
+            res.status(200).json({ message: "L'utilisateur a été bloqué avec succès.", status: 'OK' });
+        }
+        catch (error) {
+            console.error('Erreur lors du blocage de l\'utilisateur:', error);
+            res.status(500).json({ message: 'Erreur lors du blocage de l\'utilisateur', status: 'KO' });
         }
     }
 }
