@@ -529,8 +529,10 @@ class ClientController {
                 });
 
                 const myFollowersPost = await this.getMyFollowersPost(compte_id);
+
+                // return res.json(myFollowersPost);
+
                 const posts = myOwnPost.concat(myFollowersPost);
-                // return res.json(posts);
 
                 const myFollowersRecentStatus = await this.getMyFollowersRecentStatus(compte_id);
                 const recentStatus = myFollowersRecentStatus.concat(myOwnRecentStatus);
@@ -547,8 +549,7 @@ class ClientController {
             }
         }
     }
-  
-  
+
   
    async ShareNb(req: ControllerRequest, res: Response) {
                 try {
@@ -790,10 +791,44 @@ class ClientController {
                         ]
                     },
                 });
+
+                const notes = await prisma.note.findMany({
+                    where: {
+                        noted_id: id,
+                    },
+                    select: {
+                        note: true,
+                    }
+                });
+
+                const followeds = await prisma.follow.findMany({
+                    where: {
+                        AND: [
+                            {followed_id: id},
+                            {status: "FOLLOWED"}
+                        ]
+                    }
+                });
+
+                const followers = await prisma.follow.findMany({
+                    where: {
+                        AND:[
+                            {follower_id: id},
+                            {status: "FOLLOWED"}
+                        ]
+                    }
+                });
+
+                const totalDesNotes = notes.reduce((somme, note) => {
+                    return somme + parseFloat(note.note); // Convertit chaque note en nombre et fait la somme
+                }, 0);
+
+                const noteToShow = (totalDesNotes / notes.length) || 0;
+
                 if (!tailleur || !user || !compte) {
                     return res.status(404).json({ message: 'Impossible de charger le profile demandé', status: 'KO' });
                 }
-                return res.json({ tailleur, user, compte, posts, status: 'OK' });
+                return res.json({ tailleur, user, compte, posts,noteToShow,nbrAbonnee: followers.length, nbrAbonnement: followeds.length, message:'Donnée du profil retrouvé', status: 'OK' });
             }
             const client = await prisma.client.findUnique({
                 where: { compte_id: id },
