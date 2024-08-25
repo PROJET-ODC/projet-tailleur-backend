@@ -22,7 +22,14 @@ router.route('/articles').get(tailleurController.getAllArticles);
 router.route('/articles/:slug').get(tailleurController.getSomeArticle);
 router.route('/approvisions').get(tailleurController.getAllApprovisions).post(tailleurController.addApprovisions);
 router.route('/approvisions/payereste').post(tailleurController.payerResteCommande);
+router.route('/approvisions')
+    .get(tailleurController.getAllApprovisions);
+    // .post(tailleurController.addApprovisions);
 router.route('/approvisions/details').get(tailleurController.detailsApprovisions);
+
+// Route to list articles by category
+router.get('/categories/:categoryId/articles', tailleurController.listArticlesByCategory);
+router.route('/articles/:slug').get(tailleurController.getArticleBySlug);
 
 export {router};
 
