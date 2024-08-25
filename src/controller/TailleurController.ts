@@ -431,6 +431,55 @@ class TailleurController {
             res.status(500).json({ message: "Server error", status: "KO" });
         }
     }
+
+    async getAllApprovisions(req: ControllerRequest, res: Response): Promise<void> {
+        try {
+            // Assurez-vous que 'id' est défini et est un nombre
+            const tailleurId = Number(req.id);
+            if (!tailleurId) {
+                res.status(400).json({ error: 'Tailleur ID manquant' });
+                return;
+            }
+    
+            // Requête pour récupérer les commandes du tailleur
+            const commandes = await prisma.commandeArticle.findMany({
+                where: { tailleur_id : tailleurId },
+                // include: {
+                //     detailcommandes: true,
+                //     paiement: true 
+                // }
+            });
+    
+            res.json(commandes);
+        } catch (error) {
+            console.error('Erreur lors de la récupération des commandes:', error);
+            res.status(500).json({ error: 'Erreur serveur' });
+        }
+    }
+    async detailsApprovisions(req: ControllerRequest, res: Response): Promise<void> {
+        try {
+            // Supposons que commande_id soit envoyé dans req.body
+            const commande_id  = Number(req.body);
+            
+            if (!commande_id) {
+                res.status(400).json({ error: 'Commande ID manquant' });
+                return;
+            }
+    
+            const detailCommandes = await prisma.detailCommandeArticle.findMany({
+                where: { commande_id },  // Ici, on filtre juste par commande_id
+                include: {
+                    article: true  // Inclusion des détails de l'article associé
+                }
+            });
+    
+            res.json(detailCommandes);
+        } catch (error) {
+            console.error('Erreur lors de la récupération:', error);
+            res.status(500).json({ error: 'Erreur serveur' });
+        }
+    }
+    
 }
 
 export default new TailleurController();
