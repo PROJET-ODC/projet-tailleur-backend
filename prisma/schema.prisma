@@ -78,6 +78,9 @@ model Tailleur {
   status    Status[]
   stock     Stock[]
   compte    Compte            @relation(fields: [compte_id], references: [id])
+  paiement        PaiementArticle[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @default(now())
 
   @@map("tailleurs")
 }
@@ -407,6 +410,9 @@ model PaiementArticle {
   id          Int             @id @default(autoincrement())
   montant     Decimal         @db.Decimal(10, 2)
   commande_id Int
+  commande    CommandeArticle @relation(fields: [commande_id], references: [id])
+  tailleur_id Int
+  tailleur    Tailleur      @relation(fields: [tailleur_id], references: [id])
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @default(now())
   commande    CommandeArticle @relation(fields: [commande_id], references: [id])
