@@ -79,8 +79,6 @@ model Tailleur {
   stock     Stock[]
   compte    Compte            @relation(fields: [compte_id], references: [id])
   paiement        PaiementArticle[]
-  createdAt DateTime          @default(now())
-  updatedAt DateTime          @default(now())
 
   @@map("tailleurs")
 }
@@ -415,8 +413,6 @@ model PaiementArticle {
   tailleur    Tailleur      @relation(fields: [tailleur_id], references: [id])
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @default(now())
-  commande    CommandeArticle @relation(fields: [commande_id], references: [id])
-
   @@index([commande_id], map: "paiements_articles_commande_id_fkey")
   @@map("paiements_articles")
 }
