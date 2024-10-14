@@ -8,6 +8,10 @@ import {etatCommande} from '@prisma/client'; // Importez l'énumération
 import {Decimal} from '@prisma/client/runtime/library';
 
 
+
+
+
+
 const prisma = new PrismaClient();
 
 class TailleurController {
@@ -105,190 +109,478 @@ class TailleurController {
         }
     }
 
-    async createPost(req: ControllerRequest, res: Response) {
-        try {
-            const idCompte = parseInt(req.id!);
-            const compte = await prisma.compte.findUnique({
-                where: {id: idCompte},
-            });
+        // async createPost(req: ControllerRequest, res: Response) {   
+        //     try {
+        //         const idCompte = parseInt(req.id!);
+        //         const compte = await prisma.compte.findUnique({
+        //             where: {id: idCompte},
+        //         });
 
-            if (!compte) {
-                return res
-                    .status(404)
-                    .json({message: "Compte introuvable", status: "KO"});
-            }
+        //         if (!compte) {
+        //             return res
+        //                 .status(404)
+        //                 .json({message: "Compte introuvable", status: "KO"});
+        //         }
 
-            const now = new Date();
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-            const endOfMonth = new Date(
-                now.getFullYear(),
-                now.getMonth() + 1,
-                0,
-                23,
-                59,
-                59,
-                999
-            );
+        //         const now = new Date();
+        //         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        //         const endOfMonth = new Date(
+        //             now.getFullYear(),
+        //             now.getMonth() + 1,
+        //             0,
+        //             23,
+        //             59,
+        //             59,
+        //             999
+        //         );
 
-            // Valider les champs
-            const {content, title, useCredit, tags, tailles} = req.body;
+        //         // Valider les champs
+        //         const {content, title, useCredit, tags, tailles} = req.body;
 
-            if (!content || typeof content !== "string") {
-                return res.status(400).json({
-                    message: "Content must be a non-empty string",
-                    status: "KO",
-                });
-            }
+        //         if (!content || typeof content !== "string") {
+        //             return res.status(400).json({
+        //                 message: "Content must be a non-empty string",
+        //                 status: "KO",
+        //             });
+        //         }
 
-            if (!title || typeof title !== "string") {
-                return res.status(400).json({
-                    message: "Title must be a non-empty string",
-                    status: "KO"
-                });
-            }
+        //         if (!title || typeof title !== "string") {
+        //             return res.status(400).json({
+        //                 message: "Title must be a non-empty string",
+        //                 status: "KO"
+        //             });
+        //         }
 
-            if (!req.files) {
-                return res.status(400).json({
-                    message: "Le fichier est requis",
-                    status: "KO"
-                });
-            }
+        //         if (!req.files) {
+        //             return res.status(400).json({
+        //                 message: "Le fichier est requis",
+        //                 status: "KO"
+        //             });
+        //         }
 
-            const fileNames = "name" in req.files["files"] ? req.files["files"].name : "";
+        //         const fileNames = "name" in req.files["files"] ? req.files["files"].name : "";
 
-            // Récupérer le tailleur avant de créer le post
-            const tailleur = await prisma.tailleur.findUnique({
-                where: {compte_id: idCompte},
-            });
+        //         // Récupérer le tailleur avant de créer le post
+        //         const tailleur = await prisma.tailleur.findUnique({
+        //             where: {compte_id: idCompte},
+        //         });
 
-            if (!tailleur) {
-                return res.status(404).json({
-                    message: "Tailleur not found",
-                    status: "KO"
-                });
-            }
+        //         if (!tailleur) {
+        //             return res.status(404).json({
+        //                 message: "Tailleur not found",
+        //                 status: "KO"
+        //             });
+        //         }
 
-            const allMyPosts = await prisma.post.findMany({
-                where: {
-                    tailleur_id: tailleur.id,
-                    createdAt: {
-                        gte: startOfMonth,
-                        lte: endOfMonth,
-                    },
-                },
-            });
+        //         const allMyPosts = await prisma.post.findMany({
+        //             where: {
+        //                 tailleur_id: tailleur.id,
+        //                 createdAt: {
+        //                     gte: startOfMonth,
+        //                     lte: endOfMonth,
+        //                 },
+        //             },
+        //         });
 
-            // Si le tailleur a déjà posté ce mois-ci et ne veut pas utiliser de crédits
-            if (allMyPosts.length >= 1 && !useCredit) {
-                return res.json({
-                    message: "Vous ne pouvez poster plus de 1 fichier gratuitement ce mois-ci, utilisez vos crédits",
-                    status: "KO"
-                });
-            }
+        //         // Si le tailleur a déjà posté ce mois-ci et ne veut pas utiliser de crédits
+        //         if (allMyPosts.length >= 1 && !useCredit) {
+        //             return res.json({
+        //                 message: "Vous ne pouvez poster plus de 1 fichier gratuitement ce mois-ci, utilisez vos crédits",
+        //                 status: "KO"
+        //             });
+        //         }
 
-            // Si l'utilisateur veut utiliser ses crédits pour poster
-            if (useCredit) {
-                if (compte.credit >= 2) {
-                    compte.credit -= 2;
-                    await prisma.compte.update({
-                        where: {id: idCompte},
-                        data: {credit: compte.credit},
+        //         // Si l'utilisateur veut utiliser ses crédits pour poster
+        //         if (useCredit) {
+        //             if (compte.credit >= 2) {
+        //                 compte.credit -= 2;
+        //                 await prisma.compte.update({
+        //                     where: {id: idCompte},
+        //                     data: {credit: compte.credit},
+        //                 });
+
+        //                 const newPost = await prisma.post.create({
+        //                     data: {
+        //                         content,
+        //                         title,
+        //                         files: fileNames, // Sauvegarder les chemins des fichiers Cloudinary
+        //                         shareNb: 0,
+        //                         viewNb: 0,
+        //                         count: 2,
+        //                         tailleur_id: tailleur.id,
+        //                         categorie: req.body.categorie || null,
+        //                         status: req.body.status || "draft",
+        //                         createdAt: new Date(),
+        //                         updatedAt: new Date(),
+        //                     },
+        //                 });
+
+        //                 return res.status(201).json({
+        //                     message: "Post created successfully",
+        //                     status: "OK",
+        //                     post: newPost,
+        //                 });
+        //             } else {
+        //                 return res.json({
+        //                     message: "Crédit insuffisant. Rechargez votre compte pour continuer.",
+        //                     status: "KO"
+        //                 });
+        //             }
+        //         } else {
+        //             // if (req.files.length > 1) {
+        //             return res.json({
+        //                 message:
+        //                     "Vous ne pouvez poster plus de 1 file pour le moment, utilisez vos crédits",
+        //                 status: "KO",
+        //             });
+            
+        //         }
+
+        //     } catch (error) {
+        //         if (error instanceof Error) {
+        //             console.error("Erreur lors de la création du post:", error);
+        //             return res.status(500).json({
+        //                 error: "Une erreur est survenue lors de la création du post",
+        //                 details: error.message,
+        //             });
+        //         }
+        //     }
+        // }
+
+
+        // async createPost(req: ControllerRequest, res: Response) {
+        //     try {
+        //         const idCompte = parseInt(req.id!);
+        //         const compte = await prisma.compte.findUnique({ where: { id: idCompte } });
+        
+        //         if (!compte) {
+        //             return res.status(404).json({ message: "Compte introuvable", status: "KO" });
+        //         }
+        
+        //         const now = new Date();
+        //         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        //         const endOfMonth = new Date(
+        //             now.getFullYear(),
+        //             now.getMonth() + 1,
+        //             0,
+        //             23,
+        //             59,
+        //             59,
+        //             999
+        //         );
+        
+        //         // Extracting and validating fields from the request body
+        //         const { content, title, useCredit, status, categorie } = req.body;
+        
+        //         if (!content || typeof content !== "string") {
+        //             return res.status(400).json({
+        //                 message: "Content must be a non-empty string",
+        //                 status: "KO",
+        //             });
+        //         }
+        
+        //         if (!title || typeof title !== "string") {
+        //             return res.status(400).json({
+        //                 message: "Title must be a non-empty string",
+        //                 status: "KO"
+        //             });
+        //         }
+        
+        //         // Check if files are present in the request
+        //         if (!req.files || !req.files.files) {
+        //             return res.status(400).json({
+        //                 message: "Le fichier est requis",
+        //                 status: "KO"
+        //             });
+        //         }
+        
+        //         const files = Array.isArray(req.files.files) ? req.files.files : [req.files.files]; // Handle multiple or single file case
+        
+        //         // Récupérer le tailleur avant de créer le post
+        //         const tailleur = await prisma.tailleur.findUnique({
+        //             where: { compte_id: idCompte },
+        //         });
+        
+        //         if (!tailleur) {
+        //             return res.status(404).json({
+        //                 message: "Tailleur not found",
+        //                 status: "KO"
+        //             });
+        //         }
+        
+        //         const allMyPosts = await prisma.post.findMany({
+        //             where: {
+        //                 tailleur_id: tailleur.id,
+        //                 createdAt: {
+        //                     gte: startOfMonth,
+        //                     lte: endOfMonth,
+        //                 },
+        //             },
+        //         });
+        
+        //         // Si le tailleur a déjà posté ce mois-ci et ne veut pas utiliser de crédits
+        //         if (allMyPosts.length >= 1 && !useCredit) {
+        //             return res.json({
+        //                 message: "Vous ne pouvez poster plus de 1 fichier gratuitement ce mois-ci, utilisez vos crédits",
+        //                 status: "KO"
+        //             });
+        //         }
+        
+        //         // Si l'utilisateur veut utiliser ses crédits pour poster
+        //         if (useCredit) {
+        //             if (compte.credit < 2) {
+        //                 return res.json({
+        //                     message: "Crédit insuffisant. Rechargez votre compte pour continuer.",
+        //                     status: "KO"
+        //                 });
+        //             }
+        
+        //             // Deduct 2 credits from the user's account
+        //             compte.credit -= 2;
+        //             await prisma.compte.update({
+        //                 where: { id: idCompte },
+        //                 data: { credit: compte.credit },
+        //             });
+        //         }
+        
+        //         // Upload files to Cloudinary
+        //         const uploadPromises = files.map(file => {
+        //             return cloudinary.uploader.upload(file.tempFilePath, {
+        //                 folder: `posts/${idCompte}`, 
+        //                 resource_type: categorie === "IMAGE" ? "image" : "video"
+        //             });
+        //         });
+        
+        //         const uploadResults = await Promise.all(uploadPromises);
+        
+        //         // Get the folder URL where the files are stored on Cloudinary
+        //         const cloudinaryFolderLink = `https://res.cloudinary.com/${process.env.CLOUD_NAME}/v1_1/posts/${idCompte}/`;
+    
+
+        //             const newPost = await prisma.post.create({
+        //                     data: {
+        //                         content,
+        //                         title,
+        //                         files: cloudinaryFolderLink, // / Store the Cloudinary folder link
+        //                         shareNb: 0,
+        //                         viewNb: 0,
+        //                         count: 2,
+        //                         tailleur_id: tailleur.id,
+        //                         categorie: req.body.categorie || null,
+        //                         status: req.body.status || "draft",
+        //                         createdAt: new Date(),
+        //                         updatedAt: new Date(),
+        //                     },
+        //                 });
+        
+        //         return res.status(201).json({
+        //             message: "Post created successfully",
+        //             status: "OK",
+        //             post: newPost,
+        //         });
+        
+        //     } catch (error) {
+        //                 if (error instanceof Error) {
+        //                     console.error("Erreur lors de la création du post:", error);
+        //                     return res.status(500).json({
+        //                         error: "Une erreur est survenue lors de la création du post",
+        //                         details: error.message,
+        //                     });
+        //                 }
+        //     }
+        // }
+
+
+
+
+
+        async createPost(req: ControllerRequest, res: Response) {
+            try {
+                const idCompte = parseInt(req.id!);
+                const compte = await prisma.compte.findUnique({ where: { id: idCompte } });
+        
+                if (!compte) {
+                    return res.status(404).json({ message: "Compte introuvable", status: "KO" });
+                }
+        
+                const now = new Date();
+                const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+                const endOfMonth = new Date(
+                    now.getFullYear(),
+                    now.getMonth() + 1,
+                    0,
+                    23,
+                    59,
+                    59,
+                    999
+                );
+        
+                const { content, title, useCredit, status, categorie } = req.body;
+        
+                if (!content || typeof content !== "string") {
+                    return res.status(400).json({
+                        message: "Le contenu doit être une chaîne de caractères non vide",
+                        status: "KO",
                     });
-
-                    const newPost = await prisma.post.create({
-                        data: {
-                            content,
-                            title,
-                            files: fileNames, // Sauvegarder les chemins des fichiers Cloudinary
-                            shareNb: 0,
-                            viewNb: 0,
-                            count: 2,
-                            tailleur_id: tailleur.id,
-                            categorie: req.body.categorie || null,
-                            status: req.body.status || "draft",
-                            createdAt: new Date(),
-                            updatedAt: new Date(),
-                        },
-                    });
-
-                    return res.status(201).json({
-                        message: "Post created successfully",
-                        status: "OK",
-                        post: newPost,
-                    });
-                } else {
-                    return res.json({
-                        message: "Crédit insuffisant. Rechargez votre compte pour continuer.",
+                }
+        
+                if (!title || typeof title !== "string") {
+                    return res.status(400).json({
+                        message: "Le titre doit être une chaîne de caractères non vide",
                         status: "KO"
                     });
                 }
-            } else {
-                // if (req.files.length > 1) {
-                return res.json({
-                    message:
-                        "Vous ne pouvez poster plus de 1 file pour le moment, utilisez vos crédits",
-                    status: "KO",
+        
+                if (!req.files || !req.files.files) {
+                    return res.status(400).json({
+                        message: "Le fichier est requis",
+                        status: "KO"
+                    });
+                }
+        
+                const files = Array.isArray(req.files.files) ? req.files.files : [req.files.files];
+        
+                const tailleur = await prisma.tailleur.findUnique({
+                    where: { compte_id: idCompte },
                 });
-                // }
-            }
-
-            // S'assurer que tags et tailles sont des tableaux (même vides)
-            // const tagArray = Array.isArray(tags) ? tags : [];
-            // const tailleArray = Array.isArray(tailles) ? tailles : [];
-            //
-            // // Créer le post
-            // const newPost = await prisma.post.create({
-            //     data: {
-            //         content,
-            //         title,
-            //         files: fileNames,
-            //         shareNb: 0,
-            //         viewNb: 0,
-            //         count: useCredit ? 2 : 0,
-            //         tailleur_id: tailleur.id,
-            //         categorie: req.body.categorie || null,
-            //         status: req.body.status || "draft",
-            //         createdAt: new Date(),
-            //         updatedAt: new Date(),
-            //         tags: {
-            //             create: tagArray.map((libelle: string) => ({
-            //                 libelle,
-            //             })),
-            //         },
-            //         TaillePost: {
-            //             create: tailleArray.map((tailleId: number) => ({
-            //                 taille: { connect: { id: tailleId } }, // Utilisez `connect` pour associer les tailles existantes
-            //             })),
-            //         },
-            //     },
-            //     include: {
-            //         tags: true,
-            //         TaillePost: {
-            //             include: {
-            //                 taille: true,
-            //             }
-            //         },
-            //     },
-            // });
-            //
-            // return res.status(201).json({
-            //     message: "Post created successfully",
-            //     status: "OK",
-            //     post: newPost,
-            // });
-
-        } catch (error) {
-            if (error instanceof Error) {
-                console.error("Erreur lors de la création du post:", error);
-                return res.status(500).json({
-                    error: "Une erreur est survenue lors de la création du post",
-                    details: error.message,
+        
+                if (!tailleur) {
+                    return res.status(404).json({
+                        message: "Tailleur introuvable",
+                        status: "KO"
+                    });
+                }
+        
+                const allMyPosts = await prisma.post.findMany({
+                    where: {
+                        tailleur_id: tailleur.id,
+                        createdAt: {
+                            gte: startOfMonth,
+                            lte: endOfMonth,
+                        },
+                    },
                 });
+        
+                if (allMyPosts.length >= 1 && !useCredit) {
+                    return res.json({
+                        message: "Vous ne pouvez poster qu'un fichier gratuitement ce mois-ci, utilisez vos crédits",
+                        status: "KO"
+                    });
+                }
+        
+                if (useCredit) {
+                    if (compte.credit < 2) {
+                        return res.json({
+                            message: "Crédit insuffisant. Rechargez votre compte pour continuer.",
+                            status: "KO"
+                        });
+                    }
+        
+                    compte.credit -= 2;
+                    await prisma.compte.update({
+                        where: { id: idCompte },
+                        data: { credit: compte.credit },
+                    });
+                }
+        
+                const uploadPromises = files.map(file => {
+                    return cloudinary.uploader.upload(file.tempFilePath, {
+                        folder: `posts/${idCompte}`,
+                        resource_type: categorie === "IMAGE" ? "image" : "video"
+                    });
+                });
+        
+                const uploadResults = await Promise.all(uploadPromises);
+        
+                // Récupérer les URLs des fichiers uploadés
+                const uploadedFileUrls = uploadResults.map(result => result.secure_url);
+        
+                // Créer le post avec les liens des fichiers
+                const newPost = await prisma.post.create({
+                    data: {
+                        content,
+                        title,
+                        files: uploadedFileUrls.join(","), // Stocker tous les liens en base, séparés par des virgules
+                        shareNb: 0,
+                        viewNb: 0,
+                        count: 2,
+                        tailleur_id: tailleur.id,
+                        categorie: req.body.categorie || null,
+                        status: req.body.status || "draft",
+                        createdAt: new Date(),
+                        updatedAt: new Date(),
+                    },
+                });
+        
+                return res.status(201).json({
+                    message: "Post créé avec succès",
+                    status: "OK",
+                    post: newPost,
+                });
+        
+            } catch (error) {
+                if (error instanceof Error) {
+                    console.error("Erreur lors de la création du post:", error);
+                    return res.status(500).json({
+                        error: "Une erreur est survenue lors de la création du post",
+                        details: error.message,
+                    });
+                }
             }
         }
-    }
+        
 
 
+
+
+    
+        async getPosts(req: ControllerRequest, res: Response) {
+            try {
+                const posts = await prisma.post.findMany({
+                    include: {
+                        comments: true,
+                        likes: true,
+                        favoris: true,
+                        tailleur: {
+                            include: {
+                                compte: {
+                                    include: {
+                                        user: { // Inclure la relation avec User
+                                            select: {
+                                                firstname: true,
+                                                lastname: true,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                });
+        
+                return res.status(200).json({
+                    message: "Posts retrieved successfully",
+                    status: "OK",
+                    posts: posts.map(post => ({
+                        ...post,
+                        user: {
+                            firstname: post.tailleur.compte.user.firstname,
+                            lastname: post.tailleur.compte.user.lastname,
+                        },
+                    })),
+                });
+            } catch (error) {
+                if (error instanceof Error) {
+                    console.error("Erreur lors de la récupération des posts:", error);
+                    return res.status(500).json({
+                        error: "Une erreur est survenue lors de la récupération des posts",
+                        details: error.message,
+                    });
+                }
+            }
+        }
+        
+  
     async acheterCredit(req: ControllerRequest, res: Response) {
         try {
             let {montant} = req.body;

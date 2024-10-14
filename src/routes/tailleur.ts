@@ -12,7 +12,7 @@ router.use(isTailleurAuthenticated);
 
 router.route('/status').post(tailleurController.createStatus).delete(tailleurController.deleteStatus);
 
-router.route('/posts').post(tailleurController.createPost);
+router.route('/posts').post(tailleurController.createPost).get(tailleurController.getPosts);
 
 router.route('/posts/:postId').put(tailleurController.updatePost).delete(tailleurController.deletePost);
 
