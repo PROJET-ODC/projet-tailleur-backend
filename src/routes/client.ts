@@ -44,6 +44,8 @@ router
 router.route("/note").post(clientController.addNote);
 router.route("/follow").post(clientController.follow);
 
+router.route('/followers').get(clientController.getAllFollowers) ;
+
 router.route("/bloquer").post(isAuthenticatedGlobal, clientController.bloquer);
 
 router.route("/profile/:identifiant").get(clientController.getSomeProfile);
