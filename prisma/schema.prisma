@@ -220,7 +220,7 @@ model Post {
   count      Int
   shareNb    Int
   viewNb     Int
-  tailleurId Int
+  tailleur_id Int
   status     StatusPost
   categorie  CategoriePost
   createdAt  DateTime      @default(now())
@@ -229,12 +229,12 @@ model Post {
   comments   Comment[]
   favoris    Favori[]
   likes      Like[]
-  tailleur   Tailleur      @relation(fields: [tailleurId], references: [id])
+  tailleur   Tailleur      @relation(fields: [tailleur_id], references: [id])
   tags       Tag[]
   TaillePost TaillePost[]
   TissuPost  TissuPost[]
 
-  @@index([tailleurId], map: "posts_tailleur_id_fkey")
+  @@index([tailleur_id], map: "posts_tailleur_id_fkey")
   @@map("posts")
 }
 

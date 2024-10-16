@@ -10,7 +10,8 @@ const router = express.Router();
 // Middleware pour vérifier l'authentification
 router.use(isTailleurAuthenticated);
 
-router.route('/status').post(tailleurController.createStatus).delete(tailleurController.deleteStatus).get(tailleurController.getStatuses);
+router.route('/status').post(tailleurController.createStatus).delete(tailleurController.deleteStatus);
+// .get(tailleurController.getStatuses)
 
         router.route('/posts').post(tailleurController.createPost);
         router.route('/posts').get(tailleurController.getPosts);
@@ -19,7 +20,7 @@ router.route('/posts/:postId').put(tailleurController.updatePost).delete(tailleu
 
 router.route('/achetercredit').post(tailleurController.acheterCredit);
 router.route('/articles/categories').get(tailleurController.getArticleCategories);
-router.route('/articles').get(tailleurController.getAllArticles);
+// router.route('/articles').get(tailleurController.getAllArticles);
 // router.route('/articles/:slug').get(tailleurController.getSomeArticle);
 router.route('/approvisions').get(tailleurController.getAllApprovisions).post(tailleurController.addApprovisions);
 router.route('/approvisions/payereste').post(tailleurController.payerResteCommande);

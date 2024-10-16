@@ -9,3 +9,4 @@ dist/playground-22.mongodb.js
 rama.client.js
 ramacontroller.js
 dist/*
+tmp/*
