@@ -8,81 +8,81 @@ import {
 } from "@prisma/client";
 import { PrismaClient } from "@prisma/client";
 import { ControllerRequest } from "../interface/Interface.js";
+
 import { Response } from "express";
 
 const prisma = new PrismaClient();
 
 class ClientController {
-  constructor() {
-    for (const key of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
-      const val = (this as any)[key];
-      if (key !== "constructor" && typeof val === "function") {
-        (this as any)[key] = val.bind(this);
-      }
+      constructor() {
+        for (const key of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
+            const val = (this as any)[key];
+            if (key !== 'constructor' && typeof val === 'function') {
+                (this as any)[key] = val.bind(this);
+            }
+        }
     }
-  }
-
+  
   async getAuthUser(req: ControllerRequest, res: Response) {}
 
-  // Ajouter un like$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-  async addLike(req: ControllerRequest, res: Response) {
-    try {
-      const postId = parseInt(req.body.postId);
-      const compteId = parseInt(req.body.compteId);
+     // Ajouter un like$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+    async addLike(req: ControllerRequest, res:Response) {
+      try {
+          const postId = parseInt(req.body.post_id);
+          const compteId = parseInt(req.body.compte_id);
+          console.log(compteId);
+          
 
-      // Vérifie si un like/dislike existe déjà pour ce post et ce compte
-      const existingLike = await prisma.like.findFirst({
-        where: { post_id: postId, compte_id: compteId },
-      });
-
-      if (existingLike) {
-        if (existingLike.etat === "LIKE") {
-          // Si l'état est LIKE, supprimer le like
-          await prisma.like.delete({
-            where: { id: existingLike.id },
+          // Vérifie si un like/dislike existe déjà pour ce post et ce compte
+          const existingLike = await prisma.like.findFirst({
+              where: { post_id: postId, compte_id: compteId }
           });
 
-          return res.status(200).json({
-            message: "Like supprimé avec succès",
-            status: "OK",
-          });
-        } else if (existingLike.etat === "DISLIKE") {
-          // Si l'état est DISLIKE, le mettre à jour en LIKE
-          const updatedLike = await prisma.like.update({
-            where: { id: existingLike.id },
-            data: { etat: "LIKE", updatedAt: new Date() },
-          });
+          if (existingLike) {
+              if (existingLike.etat === 'LIKE') {
+                  // Si l'état est LIKE, supprimer le like
+                  await prisma.like.delete({
+                      where: { id: existingLike.id }
+                  });
 
-          return res.status(200).json({
-            message: "État changé de dislike à like",
-            data: updatedLike,
-            status: "OK",
-          });
-        }
-      } else {
-        // Crée un nouveau like si aucun n'existe
-        const newLike = await prisma.like.create({
-          data: {
-            post_id: postId,
-            compte_id: compteId,
-            etat: "LIKE",
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        });
+                  return res.status(200).json({
+                      message: 'Like supprimé avec succès',
+                      status: 'OK'
+                  });
+              } else if (existingLike.etat === 'DISLIKE') {
+                  // Si l'état est DISLIKE, le mettre à jour en LIKE
+                  const updatedLike = await prisma.like.update({
+                      where: { id: existingLike.id },
+                      data: { etat: 'LIKE', updatedAt: new Date() }
+                  });
 
-        return res.status(201).json({
-          message: "Like ajouté avec succès",
-          data: newLike,
-          status: "OK",
-        });
+                  return res.status(200).json({
+                      message: 'État changé de dislike à like',
+                      data: updatedLike,
+                      status: 'OK'
+                  });
+              }
+          } else {
+              // Crée un nouveau like si aucun n'existe
+              const newLike = await prisma.like.create({
+                  data: {
+                      post_id: postId,
+                      compte_id: compteId,
+                      etat: 'LIKE',
+                      createdAt: new Date(),
+                      updatedAt: new Date()
+                  }
+              });
+
+              return res.status(201).json({ message: 'Like ajouté avec succès', data: newLike, status: 'OK' });
+          }
+      } catch (err) {
+          if(err instanceof Error) {
+              return res.status(500).json({ message: err.message, status: 'KO' });
+          }
       }
-    } catch (err) {
-      if (err instanceof Error) {
-        return res.status(500).json({ message: err.message, status: "KO" });
-      }
-    }
   }
+}
 
   // Ajouter un dislike$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
   async addDislike(req: ControllerRequest, res: Response) {

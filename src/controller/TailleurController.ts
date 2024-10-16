@@ -4,14 +4,10 @@ import { PrismaClient } from "@prisma/client";
 import { Response } from "express";
 import { ControllerRequest } from "../interface/Interface";
 // import Decimal from 'decimal.js';
+
 import { etatCommande } from "@prisma/client"; // Importez l'énumération
 import { Decimal } from "@prisma/client/runtime/library";
 import { uploadImageCloud, uploadImageLocal } from "../utils/uploadFile.js";
-import { UploadedFile } from "express-fileupload";
-
-
-
-
 
 const prisma = new PrismaClient();
 
@@ -110,10 +106,7 @@ class TailleurController {
     }
 
 
-
-
-
-        async createPost(req: ControllerRequest, res: Response) {
+    async createPost(req: ControllerRequest, res: Response) {
             try {
                 const idCompte = parseInt(req.id!);
                 const compte = await prisma.compte.findUnique({ where: { id: idCompte } });
@@ -248,58 +241,56 @@ class TailleurController {
             }
         }
         
-
-
-
-
+        }
     
-        async getPosts(req: ControllerRequest, res: Response) {
-            try {
-                const posts = await prisma.post.findMany({
-                    include: {
-                        comments: true,
-                        likes: true,
-                        favoris: true,
-                        tailleur: {
-                            include: {
-                                compte: {
-                                    include: {
-                                        user: { // Inclure la relation avec User
-                                            select: {
-                                                firstname: true,
-                                                lastname: true,
-                                            },
+    
+    async getPosts(req: ControllerRequest, res: Response) {
+        try {
+            const posts = await prisma.post.findMany({
+                include: {
+                    comments: true,
+                    likes: true,
+                    favoris: true,
+                    tailleur: {
+                        include: {
+                            compte: {
+                                include: {
+                                    user: { // Inclure la relation avec User
+                                        select: {
+                                            firstname: true,
+                                            lastname: true,
                                         },
                                     },
                                 },
                             },
                         },
                     },
+                },
+            });
+    
+            return res.status(200).json({
+                message: "Posts retrieved successfully",
+                status: "OK",
+                posts: posts.map(post => ({
+                    ...post,
+                    user: {
+                        firstname: post.tailleur.compte.user.firstname,
+                        lastname: post.tailleur.compte.user.lastname,
+                    },
+                })),
+            });
+        } catch (error) {
+            if (error instanceof Error) {
+                console.error("Erreur lors de la récupération des posts:", error);
+                return res.status(500).json({
+                    error: "Une erreur est survenue lors de la récupération des posts",
+                    details: error.message,
                 });
-        
-                return res.status(200).json({
-                    message: "Posts retrieved successfully",
-                    status: "OK",
-                    posts: posts.map(post => ({
-                        ...post,
-                        user: {
-                            firstname: post.tailleur.compte.user.firstname,
-                            lastname: post.tailleur.compte.user.lastname,
-                        },
-                    })),
-                });
-            } catch (error) {
-                if (error instanceof Error) {
-                    console.error("Erreur lors de la récupération des posts:", error);
-                    return res.status(500).json({
-                        error: "Une erreur est survenue lors de la récupération des posts",
-                        details: error.message,
-                    });
-                }
             }
         }
-        
-  
+    }
+    
+
     async acheterCredit(req: ControllerRequest, res: Response) {
         try {
             let {montant} = req.body;
@@ -1040,4 +1031,3 @@ async payerResteCommande(req: ControllerRequest, res: Response) {
 }
 
 export default new TailleurController();
-//772313145:FATIMA IMAN//
