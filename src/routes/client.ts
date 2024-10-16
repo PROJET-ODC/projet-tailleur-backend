@@ -23,7 +23,9 @@ router.route("/like").post(clientController.addLike);
 router.route("/dislike").post(clientController.addDislike);
 
 //send message
-router.route("/sendMessage").post(clientController.sendMessage);
+router.route('/sendMessage').post(clientController.sendMessage);
+router.route('/messages/:user_id').get(clientController.getMesssage);
+
 
 router.route("/favorites").get(clientController.getAllFavorites);
 router.route("/favorites/add").post(clientController.addFavorite);
