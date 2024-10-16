@@ -78,7 +78,7 @@ model Tailleur {
   status    Status[]
   stock     Stock[]
   compte    Compte            @relation(fields: [compte_id], references: [id])
-  paiement        PaiementArticle[]
+  paiement  PaiementArticle[]
 
   @@map("tailleurs")
 }
@@ -213,28 +213,28 @@ model Status {
 }
 
 model Post {
-  id          Int           @id @default(autoincrement())
-  content     String
-  title       String
-  files       Json?
-  count       Int
-  shareNb     Int
-  viewNb      Int
-  tailleur_id Int
-  status      StatusPost
-  categorie   CategoriePost
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @default(now())
-  Commande    Commande[]
-  comments    Comment[]
-  favoris     Favori[]
-  likes       Like[]
-  tailleur    Tailleur      @relation(fields: [tailleur_id], references: [id])
-  tags        Tag[]
-  TaillePost  TaillePost[]
-  TissuPost   TissuPost[]
+  id         Int           @id @default(autoincrement())
+  content    String
+  title      String
+  files      Json?
+  count      Int
+  shareNb    Int
+  viewNb     Int
+  tailleurId Int
+  status     StatusPost
+  categorie  CategoriePost
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @default(now())
+  Commande   Commande[]
+  comments   Comment[]
+  favoris    Favori[]
+  likes      Like[]
+  tailleur   Tailleur      @relation(fields: [tailleurId], references: [id])
+  tags       Tag[]
+  TaillePost TaillePost[]
+  TissuPost  TissuPost[]
 
-  @@index([tailleur_id], map: "posts_tailleur_id_fkey")
+  @@index([tailleurId], map: "posts_tailleur_id_fkey")
   @@map("posts")
 }
 
@@ -410,9 +410,10 @@ model PaiementArticle {
   commande_id Int
   commande    CommandeArticle @relation(fields: [commande_id], references: [id])
   tailleur_id Int
-  tailleur    Tailleur      @relation(fields: [tailleur_id], references: [id])
+  tailleur    Tailleur        @relation(fields: [tailleur_id], references: [id])
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @default(now())
+
   @@index([commande_id], map: "paiements_articles_commande_id_fkey")
   @@map("paiements_articles")
 }

@@ -6,6 +6,8 @@ import {ControllerRequest} from "../interface/Interface";
 // import Decimal from 'decimal.js';
 import {etatCommande} from '@prisma/client'; // Importez l'énumération
 import {Decimal} from '@prisma/client/runtime/library';
+import { UploadedFile } from 'express-fileupload';
+
 
 
 const prisma = new PrismaClient();
@@ -39,10 +41,31 @@ class TailleurController {
                     .status(400)
                     .json({message: "Le fichier est requis", status: "KO"});
             }
-
-            const fileNames =
-                "name" in req.files["files"] ? req.files["files"].name : "";
-
+            if (!req.files || !req.files["files"]) {
+                return res.status(400).json({
+                    message: "Le fichier est requis",
+                    status: "KO"
+                });
+            }
+    
+            let files = req.files["files"];
+           // Gérer à la fois les fichiers uniques et multiples
+           const uploadedFiles: string[] = [];
+    
+           if (Array.isArray(files)) {
+               // Si c'est un tableau de fichiers
+               for (const file of files) {
+                   const uploaded = await cloudinary.uploader.upload((file as UploadedFile).tempFilePath);
+                   uploadedFiles.push(uploaded.secure_url);
+               }
+           } else {
+               // Si c'est un fichier unique
+               const uploaded = await cloudinary.uploader.upload((files as UploadedFile).tempFilePath);
+               uploadedFiles.push(uploaded.secure_url);
+           }
+   
+           const fileNames = uploadedFiles.join(',');
+   
             const newStatus = await prisma.status.create({
                 data: {
                     files: fileNames,
@@ -60,6 +83,53 @@ class TailleurController {
             }
         }
     }
+
+    async getStatuses(req: ControllerRequest, res: Response) {
+        try {
+            const compte_id = parseInt(req.id!);
+    
+            // Vérifier si le tailleur existe
+            const tailleur = await prisma.tailleur.findUnique({
+                where: { compte_id: compte_id },
+            });
+    
+            if (!tailleur) {
+                return res.status(400).json({
+                    message: "Le tailleur est introuvable",
+                    status: "KO"
+                });
+            }
+    
+            // Récupérer les statuts associés à ce tailleur
+            const statuses = await prisma.status.findMany({
+                where: { tailleur_id: tailleur.id },
+                orderBy: {
+                    createdAt: 'desc'  // Trier par date de création, du plus récent au plus ancien
+                }
+            });
+    
+            // Vérifier si des statuts existent
+            if (statuses.length === 0) {
+                return res.status(404).json({
+                    message: "Aucun statut trouvé pour ce tailleur",
+                    status: "KO"
+                });
+            }
+    
+            // Réponse avec la liste des statuts
+            return res.status(200).json({
+                message: "Statuts récupérés avec succès",
+                status: "OK",
+                data: statuses
+            });
+    
+        } catch (error) {
+            if (error instanceof Error) {
+                return res.status(500).json({ message: error.message, status: "KO" });
+            }
+        }
+    }
+    
 
     async deleteStatus(req: ControllerRequest, res: Response) {
         try {
@@ -105,19 +175,18 @@ class TailleurController {
         }
     }
 
+
     async createPost(req: ControllerRequest, res: Response) {
         try {
             const idCompte = parseInt(req.id!);
             const compte = await prisma.compte.findUnique({
-                where: {id: idCompte},
+                where: { id: idCompte },
             });
-
+    
             if (!compte) {
-                return res
-                    .status(404)
-                    .json({message: "Compte introuvable", status: "KO"});
+                return res.status(404).json({ message: "Compte introuvable", status: "KO" });
             }
-
+    
             const now = new Date();
             const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
             const endOfMonth = new Date(
@@ -129,55 +198,72 @@ class TailleurController {
                 59,
                 999
             );
-
+    
             // Valider les champs
-            const {content, title, useCredit, tags, tailles} = req.body;
-
+            const { content, title, useCredit, tags, tailles } = req.body;
+    
             if (!content || typeof content !== "string") {
                 return res.status(400).json({
                     message: "Content must be a non-empty string",
                     status: "KO",
                 });
             }
-
+    
             if (!title || typeof title !== "string") {
                 return res.status(400).json({
                     message: "Title must be a non-empty string",
                     status: "KO"
                 });
             }
-
-            if (!req.files) {
+    
+            if (!req.files || !req.files["files"]) {
                 return res.status(400).json({
                     message: "Le fichier est requis",
                     status: "KO"
                 });
             }
-
-            const fileNames = "name" in req.files["files"] ? req.files["files"].name : "";
-
+    
+            let files = req.files["files"];
+    
+            // Gérer à la fois les fichiers uniques et multiples
+            const uploadedFiles: string[] = [];
+    
+            if (Array.isArray(files)) {
+                // Si c'est un tableau de fichiers
+                for (const file of files) {
+                    const uploaded = await cloudinary.uploader.upload((file as UploadedFile).tempFilePath);
+                    uploadedFiles.push(uploaded.secure_url);
+                }
+            } else {
+                // Si c'est un fichier unique
+                const uploaded = await cloudinary.uploader.upload((files as UploadedFile).tempFilePath);
+                uploadedFiles.push(uploaded.secure_url);
+            }
+    
+            const fileNames = uploadedFiles.join(',');
+    
             // Récupérer le tailleur avant de créer le post
             const tailleur = await prisma.tailleur.findUnique({
-                where: {compte_id: idCompte},
+                where: { compte_id: idCompte },
             });
-
+    
             if (!tailleur) {
                 return res.status(404).json({
                     message: "Tailleur not found",
                     status: "KO"
                 });
             }
-
+    
             const allMyPosts = await prisma.post.findMany({
                 where: {
-                    tailleur_id: tailleur.id,
+                    tailleurId: tailleur.id,
                     createdAt: {
                         gte: startOfMonth,
                         lte: endOfMonth,
                     },
                 },
             });
-
+    
             // Si le tailleur a déjà posté ce mois-ci et ne veut pas utiliser de crédits
             if (allMyPosts.length >= 1 && !useCredit) {
                 return res.json({
@@ -185,98 +271,38 @@ class TailleurController {
                     status: "KO"
                 });
             }
-
-            // Si l'utilisateur veut utiliser ses crédits pour poster
-            if (useCredit) {
-                if (compte.credit >= 2) {
-                    compte.credit -= 2;
-                    await prisma.compte.update({
-                        where: {id: idCompte},
-                        data: {credit: compte.credit},
-                    });
-
-                    const newPost = await prisma.post.create({
-                        data: {
-                            content,
-                            title,
-                            files: fileNames, // Sauvegarder les chemins des fichiers Cloudinary
-                            shareNb: 0,
-                            viewNb: 0,
-                            count: 2,
-                            tailleur_id: tailleur.id,
-                            categorie: req.body.categorie || null,
-                            status: req.body.status || "draft",
-                            createdAt: new Date(),
-                            updatedAt: new Date(),
-                        },
-                    });
-
-                    return res.status(201).json({
-                        message: "Post created successfully",
-                        status: "OK",
-                        post: newPost,
-                    });
-                } else {
-                    return res.json({
-                        message: "Crédit insuffisant. Rechargez votre compte pour continuer.",
-                        status: "KO"
-                    });
-                }
-            } else {
-                // if (req.files.length > 1) {
-                return res.json({
-                    message:
-                        "Vous ne pouvez poster plus de 1 file pour le moment, utilisez vos crédits",
-                    status: "KO",
+    
+            if (useCredit && compte.credit >= 2) {
+                compte.credit -= 2;
+                await prisma.compte.update({
+                    where: { id: idCompte },
+                    data: { credit: compte.credit },
                 });
-                // }
             }
-
-            // S'assurer que tags et tailles sont des tableaux (même vides)
-            // const tagArray = Array.isArray(tags) ? tags : [];
-            // const tailleArray = Array.isArray(tailles) ? tailles : [];
-            //
-            // // Créer le post
-            // const newPost = await prisma.post.create({
-            //     data: {
-            //         content,
-            //         title,
-            //         files: fileNames,
-            //         shareNb: 0,
-            //         viewNb: 0,
-            //         count: useCredit ? 2 : 0,
-            //         tailleur_id: tailleur.id,
-            //         categorie: req.body.categorie || null,
-            //         status: req.body.status || "draft",
-            //         createdAt: new Date(),
-            //         updatedAt: new Date(),
-            //         tags: {
-            //             create: tagArray.map((libelle: string) => ({
-            //                 libelle,
-            //             })),
-            //         },
-            //         TaillePost: {
-            //             create: tailleArray.map((tailleId: number) => ({
-            //                 taille: { connect: { id: tailleId } }, // Utilisez `connect` pour associer les tailles existantes
-            //             })),
-            //         },
-            //     },
-            //     include: {
-            //         tags: true,
-            //         TaillePost: {
-            //             include: {
-            //                 taille: true,
-            //             }
-            //         },
-            //     },
-            // });
-            //
-            // return res.status(201).json({
-            //     message: "Post created successfully",
-            //     status: "OK",
-            //     post: newPost,
-            // });
-
+    
+            // Créer le post avec les fichiers uploadés
+            const newPost = await prisma.post.create({
+                data: {
+                    content,
+                    title,
+                    files: fileNames,
+                    shareNb: 0,
+                    viewNb: 0,
+                    count: useCredit ? 2 : 0,
+                    tailleurId: tailleur.id,
+                    categorie: req.body.categorie || null,
+                    status: req.body.status || "draft",
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                },
+            });
+    
+            return res.status(201).json({
+                message: "Post created successfully",
+                status: "OK",
+                post: newPost,
+            });
+    
         } catch (error) {
             if (error instanceof Error) {
                 console.error("Erreur lors de la création du post:", error);
@@ -287,7 +313,56 @@ class TailleurController {
             }
         }
     }
-
+    
+    
+    async getPosts(req: ControllerRequest, res: Response) {
+        try {
+            const posts = await prisma.post.findMany({
+                include: {
+                    comments: true,
+                    likes: true,
+                    favoris: true,
+                    tailleur: {
+                        include: {
+                            compte: {
+                                include: {
+                                    user: { // Inclure la relation avec User
+                                        select: {
+                                            firstname: true,
+                                            lastname: true,
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+    
+            return res.status(200).json({
+                message: "Posts retrieved successfully",
+                status: "OK",
+                posts: posts.map(post => ({
+                    ...post,
+                    user: {
+                        firstname: post.tailleur.compte.user.firstname,
+                        lastname: post.tailleur.compte.user.lastname,
+                    },
+                })),
+            });
+        } catch (error) {
+            if (error instanceof Error) {
+                console.error("Erreur lors de la récupération des posts:", error);
+                return res.status(500).json({
+                    error: "Une erreur est survenue lors de la récupération des posts",
+                    details: error.message,
+                });
+            }
+        }
+    }
+    
+    
+    
 
     async acheterCredit(req: ControllerRequest, res: Response) {
         try {
@@ -414,6 +489,7 @@ class TailleurController {
     async deletePost(req: ControllerRequest, res: Response) {
         try {
             const postId = parseInt(req.params.postId);
+            console.log(postId);
             const compte_id = parseInt(req.id!);
 
             const tailleur = await prisma.tailleur.findUnique({
@@ -432,13 +508,13 @@ class TailleurController {
                 where: {id: postId},
             });
 
-            if (!post || post.tailleur_id !== tailleur.id) {
+           /*  if (!post || post.tailleur_id !== tailleur.id) {
                 return res.status(404).json({
                     message: "Post not found or you don't have permission to delete it",
                     status: "KO",
                 });
             }
-
+ */
             // Supprimer le post
             await prisma.post.delete({
                 where: {id: postId},
@@ -740,4 +816,4 @@ class TailleurController {
 }
 
 export default new TailleurController();
-//772313145:FATIMA IMAN//
+//772313145:FATIMA IMAN//sssssssssssssssss

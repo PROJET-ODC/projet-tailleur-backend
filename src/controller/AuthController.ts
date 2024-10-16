@@ -190,11 +190,11 @@ class AuthController {
           createdAt: new Date(),
           etat: "ACTIVE",
           bio,
-          credit: 0,
+          credit:20,
         },
       });
 
-      if (role === "TAILLEUR") {
+      if (role === "tailleur") {
         await prisma.tailleur.create({
           data: {
             compte_id: compte.id,

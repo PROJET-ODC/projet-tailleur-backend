@@ -2,6 +2,7 @@ import { Favori, Comment, CommentResponse, Post, Report, Compte } from '@prisma/
 import { PrismaClient } from '@prisma/client';
 import { ControllerRequest } from "../interface/Interface.js";
 import {Response } from "express";
+import { log } from 'console';
 
 
 const prisma = new PrismaClient();
@@ -20,8 +21,10 @@ class ClientController {
     // Ajouter un like$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
     async addLike(req: ControllerRequest, res:Response) {
         try {
-            const postId = parseInt(req.body.postId);
-            const compteId = parseInt(req.body.compteId);
+            const postId = parseInt(req.body.post_id);
+            const compteId = parseInt(req.body.compte_id);
+            console.log(compteId);
+            
 
             // Vérifie si un like/dislike existe déjà pour ce post et ce compte
             const existingLike = await prisma.like.findFirst({
