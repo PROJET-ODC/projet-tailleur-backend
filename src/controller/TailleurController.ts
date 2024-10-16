@@ -252,20 +252,22 @@ class TailleurController {
     try {
       const posts = await prisma.post.findMany({
         include: {
-          comments: true,
+          comments: {
+            include: {
+              compte: {
+                include: {
+                  user: true, // Include user information related to your own compte
+                },
+              },
+            },
+          },
           likes: true,
           favoris: true,
           tailleur: {
             include: {
               compte: {
                 include: {
-                  user: {
-                    // Inclure la relation avec User
-                    select: {
-                      firstname: true,
-                      lastname: true,
-                    },
-                  },
+                  user: true,
                 },
               },
             },

@@ -607,7 +607,18 @@ class ClientController {
           { status: "PUBLIE" },
         ],
       },
-      include: { tags: true },
+      include: {
+        tags: true,
+        tailleur: {
+          include: {
+            compte: {
+              include: {
+                user: true, // Include user information related to your own compte
+              },
+            },
+          },
+        },
+      },
     });
     //
     return myFollowersPost;
@@ -617,19 +628,26 @@ class ClientController {
     const now = Date.now();
     const twentyFourHoursInMs = 24 * 60 * 60 * 1000;
 
+    // Step 1: Find all followers of the user by compteId
     const myFollowers = await prisma.follow.findMany({
       where: {
         follower_id: compteId,
       },
       include: {
-        followed: true,
+        followed: {
+          include: {
+            user: true, // Include user information related to the Compte
+          },
+        },
       },
     });
 
+    // Step 2: Filter only active followers
     const myFollowersCompte = myFollowers
       .filter((follow) => follow.followed?.etat === "active")
       .map((follow) => follow.followed_id);
 
+    // Step 3: Find the followers that are also tailors (tailleurs)
     const myFollowersTailleur = await prisma.tailleur.findMany({
       where: {
         compte_id: { in: myFollowersCompte },
@@ -640,12 +658,25 @@ class ClientController {
       (tailleur) => tailleur.id
     );
 
+    // Step 4: Find all statuses of those tailors
     const myFollowersStatus = await prisma.status.findMany({
       where: {
         tailleur_id: { in: myFollowersTailleurIds },
       },
+      include: {
+        tailleur: {
+          include: {
+            compte: {
+              include: {
+                user: true, // Include user information here as well
+              },
+            },
+          },
+        },
+      },
     });
 
+    // Step 5: Filter statuses created within the last 24 hours
     const myFollowersRecentStatus = myFollowersStatus.filter((status) => {
       const createdAtMs = new Date(status.createdAt).getTime();
       const differenceInMs = now - createdAtMs;
@@ -682,11 +713,33 @@ class ClientController {
           where: {
             AND: [{ tailleur_id: tailleur?.id }, { status: "PUBLIE" }],
           },
-          include: { tags: true },
+          include: {
+            tags: true,
+            tailleur: {
+              include: {
+                compte: {
+                  include: {
+                    user: true, // Include user information related to your own compte
+                  },
+                },
+              },
+            },
+          },
         });
 
         const myOwnStatus = await prisma.status.findMany({
           where: { tailleur_id: tailleur?.id },
+          include: {
+            tailleur: {
+              include: {
+                compte: {
+                  include: {
+                    user: true, // Include user information related to your own compte
+                  },
+                },
+              },
+            },
+          },
         });
 
         const myOwnRecentStatus = myOwnStatus.filter((status) => {
