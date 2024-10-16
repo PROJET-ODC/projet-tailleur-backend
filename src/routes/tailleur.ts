@@ -10,9 +10,10 @@ const router = express.Router();
 // Middleware pour vérifier l'authentification
 router.use(isTailleurAuthenticated);
 
-router.route('/status').post(tailleurController.createStatus).delete(tailleurController.deleteStatus);
+router.route('/status').post(tailleurController.createStatus).delete(tailleurController.deleteStatus).get(tailleurController.getStatuses);
 
-router.route('/posts').post(tailleurController.createPost);
+        router.route('/posts').post(tailleurController.createPost);
+        router.route('/posts').get(tailleurController.getPosts);
 
 router.route('/posts/:postId').put(tailleurController.updatePost).delete(tailleurController.deletePost);
 
@@ -24,6 +25,9 @@ router.route('/approvisions').get(tailleurController.getAllApprovisions).post(ta
 router.route('/approvisions/payereste').post(tailleurController.payerResteCommande);
 
 router.route('/approvisions/details').get(tailleurController.detailsApprovisions);
+
+router.route('/listcommandes').get(tailleurController.listCommandes);
+
 
 // Route to list articles by category
 // router.get('/categories/:categoryId/articles', tailleurController.listArticlesByCategory);
