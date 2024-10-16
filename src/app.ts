@@ -13,6 +13,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import crypto from "crypto";
 import cors from "cors";
+import { Server } from "socket.io";
+import http from "http";
 
 const app = express();
 
@@ -67,6 +69,16 @@ app.use(`${BASE_API}/tailleur`, tailleurRoutes);
 app.use(`${BASE_API}/vendeur`, vendeurRoutes);
 app.use(`${BASE_API}/admin`, AdminRoutes);
 
-app.listen(PORT, () => {
+const server = http.createServer(app);
+
+// Initialize a new instance of Socket.IO by passing the HTTP server
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173", // Allow requests from this origin and my frontend port = 5173
+    methods: ["GET", "POST"], // Allow these HTTP methods
+  },
+});
+
+server.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
 });

@@ -78,7 +78,7 @@ model Tailleur {
   status    Status[]
   stock     Stock[]
   compte    Compte            @relation(fields: [compte_id], references: [id])
-  paiement        PaiementArticle[]
+  paiement  PaiementArticle[]
 
   @@map("tailleurs")
 }
@@ -213,28 +213,28 @@ model Status {
 }
 
 model Post {
-  id          Int           @id @default(autoincrement())
-  content     String
-  title       String
-  files       Json?
-  count       Int
-  shareNb     Int
-  viewNb      Int
-  tailleur_id Int
-  status      StatusPost
-  categorie   CategoriePost
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @default(now())
-  Commande    Commande[]
-  comments    Comment[]
-  favoris     Favori[]
-  likes       Like[]
-  tailleur    Tailleur      @relation(fields: [tailleur_id], references: [id])
-  tags        Tag[]
-  TaillePost  TaillePost[]
-  TissuPost   TissuPost[]
+  id         Int           @id @default(autoincrement())
+  content    String
+  title      String
+  files      Json?
+  count      Int
+  shareNb    Int
+  viewNb     Int
+  tailleurId Int
+  status     StatusPost
+  categorie  CategoriePost
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @default(now())
+  Commande   Commande[]
+  comments   Comment[]
+  favoris    Favori[]
+  likes      Like[]
+  tailleur   Tailleur      @relation(fields: [tailleurId], references: [id])
+  tags       Tag[]
+  TaillePost TaillePost[]
+  TissuPost  TissuPost[]
 
-  @@index([tailleur_id], map: "posts_tailleur_id_fkey")
+  @@index([tailleurId], map: "posts_tailleur_id_fkey")
   @@map("posts")
 }
 
@@ -410,9 +410,10 @@ model PaiementArticle {
   commande_id Int
   commande    CommandeArticle @relation(fields: [commande_id], references: [id])
   tailleur_id Int
-  tailleur    Tailleur      @relation(fields: [tailleur_id], references: [id])
+  tailleur    Tailleur        @relation(fields: [tailleur_id], references: [id])
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @default(now())
+
   @@index([commande_id], map: "paiements_articles_commande_id_fkey")
   @@map("paiements_articles")
 }
@@ -518,20 +519,40 @@ model TaillePost {
   @@map("taille_posts")
 }
 
-model Commande {
-  id        Int        @id @default(autoincrement())
-  post_id   Int
-  compte_id Int
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @default(now())
-  compte    Compte     @relation(fields: [compte_id], references: [id])
-  post      Post       @relation(fields: [post_id], references: [id])
-  paiement  Paiement[]
+// model Commande {
+//   id        Int        @id @default(autoincrement())
+//   post_id   Int
+//   compte_id Int
+//   taille  Decimal
+//   qte  Decimal
+//   createdAt DateTime   @default(now())
+//   updatedAt DateTime   @default(now())
+//   compte    Compte     @relation(fields: [compte_id], references: [id])
+//   post      Post       @relation(fields: [post_id], references: [id])
+//   paiement  Paiement[]
 
-  @@index([compte_id], map: "commandes_compte_id_fkey")
-  @@index([post_id], map: "commandes_post_id_fkey")
-  @@map("commandes")
+//   @@index([compte_id], map: "commandes_compte_id_fkey")
+//   @@index([post_id], map: "commandes_post_id_fkey")
+//   @@map("commandes")
+// }
+
+model Commande {
+    id        Int        @id @default(autoincrement())
+    post_id   Int
+    compte_id Int
+    taille    Decimal?   // Assurez-vous que c'est bien ici
+    qte       Decimal?   // Assurez-vous que c'est bien ici
+    createdAt DateTime   @default(now())
+    updatedAt DateTime   @default(now())
+    compte    Compte     @relation(fields: [compte_id], references: [id])
+    post      Post       @relation(fields: [post_id], references: [id])
+    paiement  Paiement[]
+
+    @@index([compte_id], map: "commandes_compte_id_fkey")
+    @@index([post_id], map: "commandes_post_id_fkey")
+    @@map("commandes")
 }
+
 
 model Paiement {
   id          Int      @id @default(autoincrement())

@@ -8,87 +8,88 @@ import {
 } from "@prisma/client";
 import { PrismaClient } from "@prisma/client";
 import { ControllerRequest } from "../interface/Interface.js";
+
 import { Response } from "express";
 
 const prisma = new PrismaClient();
 
 class ClientController {
-  constructor() {
-    for (const key of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
-      const val = (this as any)[key];
-      if (key !== "constructor" && typeof val === "function") {
-        (this as any)[key] = val.bind(this);
-      }
+      constructor() {
+        for (const key of Object.getOwnPropertyNames(Object.getPrototypeOf(this))) {
+            const val = (this as any)[key];
+            if (key !== 'constructor' && typeof val === 'function') {
+                (this as any)[key] = val.bind(this);
+            }
+        }
     }
-  }
-
+  
   async getAuthUser(req: ControllerRequest, res: Response) {}
 
-  // Ajouter un like$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-  async addLike(req: ControllerRequest, res: Response) {
-    try {
-      const postId = parseInt(req.body.postId);
-      const compteId = parseInt(req.body.compteId);
+     // Ajouter un like$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+    async addLike(req: ControllerRequest, res:Response) {
+      try {
+          const postId = parseInt(req.body.post_id);
+          const compteId = parseInt(req.body.compte_id);
+          console.log(compteId);
+          
 
-      // Vérifie si un like/dislike existe déjà pour ce post et ce compte
-      const existingLike = await prisma.like.findFirst({
-        where: { post_id: postId, compte_id: compteId },
-      });
-
-      if (existingLike) {
-        if (existingLike.etat === "LIKE") {
-          // Si l'état est LIKE, supprimer le like
-          await prisma.like.delete({
-            where: { id: existingLike.id },
+          // Vérifie si un like/dislike existe déjà pour ce post et ce compte
+          const existingLike = await prisma.like.findFirst({
+              where: { post_id: postId, compte_id: compteId }
           });
 
-          return res.status(200).json({
-            message: "Like supprimé avec succès",
-            status: "OK",
-          });
-        } else if (existingLike.etat === "DISLIKE") {
-          // Si l'état est DISLIKE, le mettre à jour en LIKE
-          const updatedLike = await prisma.like.update({
-            where: { id: existingLike.id },
-            data: { etat: "LIKE", updatedAt: new Date() },
-          });
+          if (existingLike) {
+              if (existingLike.etat === 'LIKE') {
+                  // Si l'état est LIKE, supprimer le like
+                  await prisma.like.delete({
+                      where: { id: existingLike.id }
+                  });
 
-          return res.status(200).json({
-            message: "État changé de dislike à like",
-            data: updatedLike,
-            status: "OK",
-          });
-        }
-      } else {
-        // Crée un nouveau like si aucun n'existe
-        const newLike = await prisma.like.create({
-          data: {
-            post_id: postId,
-            compte_id: compteId,
-            etat: "LIKE",
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          },
-        });
+                  return res.status(200).json({
+                      message: 'Like supprimé avec succès',
+                      status: 'OK'
+                  });
+              } else if (existingLike.etat === 'DISLIKE') {
+                  // Si l'état est DISLIKE, le mettre à jour en LIKE
+                  const updatedLike = await prisma.like.update({
+                      where: { id: existingLike.id },
+                      data: { etat: 'LIKE', updatedAt: new Date() }
+                  });
 
-        return res.status(201).json({
-          message: "Like ajouté avec succès",
-          data: newLike,
-          status: "OK",
-        });
+                  return res.status(200).json({
+                      message: 'État changé de dislike à like',
+                      data: updatedLike,
+                      status: 'OK'
+                  });
+              }
+          } else {
+              // Crée un nouveau like si aucun n'existe
+              const newLike = await prisma.like.create({
+                  data: {
+                      post_id: postId,
+                      compte_id: compteId,
+                      etat: 'LIKE',
+                      createdAt: new Date(),
+                      updatedAt: new Date()
+                  }
+              });
+
+              return res.status(201).json({ message: 'Like ajouté avec succès', data: newLike, status: 'OK' });
+          }
+      } catch (err) {
+          if(err instanceof Error) {
+              return res.status(500).json({ message: err.message, status: 'KO' });
+          }
       }
-    } catch (err) {
-      if (err instanceof Error) {
-        return res.status(500).json({ message: err.message, status: "KO" });
-      }
-    }
   }
+}
 
   // Ajouter un dislike$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
   async addDislike(req: ControllerRequest, res: Response) {
     try {
       const postId = parseInt(req.body.postId);
       const compteId = parseInt(req.body.compteId);
+
 
       const existingDislike = await prisma.like.findFirst({
         where: { post_id: postId, compte_id: compteId },
@@ -117,12 +118,12 @@ class ClientController {
           });
         }
       } else {
+
         const newDislike = await prisma.like.create({
           data: {
             post_id: postId,
             compte_id: compteId,
-            etat: "DISLIKE",
-            createdAt: new Date(),
+            etat: "DISLIKE",            createdAt: new Date(),
             updatedAt: new Date(),
           },
         });
@@ -137,6 +138,7 @@ class ClientController {
       if (err instanceof Error) {
         return res.status(500).json({ message: err.message, status: "KO" });
       }
+
     }
   }
 
@@ -200,6 +202,37 @@ class ClientController {
       }
     }
   }
+
+
+async getMesssage(req: ControllerRequest, res: Response): Promise<Response> {
+  try {
+      // Récupération de l'ID utilisateur à partir des paramètres de la requête
+      const userId = Number(req.params.user_id);
+
+      // Vérification que l'ID utilisateur est valide
+      if (isNaN(userId)) {
+          return res.status(400).json({ message: "ID utilisateur invalide", status: "KO" });
+      }
+
+      // Récupération des messages associés à cet utilisateur
+      const messages = await prisma.message.findMany({
+          where: { messager_id: userId },
+          orderBy: { createdAt: 'desc' } 
+      });
+
+      // Vérification si l'utilisateur a des messages
+      if (messages.length === 0) {
+          return res
+            .status(404)
+            .json({ message: "Aucune discussion trouvée pour cet utilisateur", status: "KO" });
+      }
+
+      // Renvoie des messages avec un statut de succès
+      return res.status(200).json({ messages, status: "OK" });
+  } catch (err: any) {
+      return res.status(500).json({ message: err.message, status: "KO" });
+  }
+}
 
   async getFavoriteById(
     req: ControllerRequest,
@@ -711,6 +744,9 @@ class ClientController {
             AND: [{ tailleur_id: tailleur?.id }, { status: "PUBLIE" }],
           },
         });
+    }
+  }
+
 
         if (!tailleur || !user || !compte) {
           return res.status(404).json({
@@ -722,26 +758,6 @@ class ClientController {
         return res.json({ tailleur, user, compte, posts, status: "OK" });
       }
 
-      const client = await prisma.client.findUnique({
-        where: { compte_id: id },
-      });
-
-      if (!client || !user || !compte) {
-        return res.status(404).json({
-          message: "Impossible de charger le profile demandé",
-          status: "KO",
-        });
-      }
-
-      const followersPosts = await this.getMyFollowersPost(compte.id);
-
-      return res.json({ client, user, compte, followersPosts, status: "OK" });
-    } catch (error) {
-      return res
-        .status(500)
-        .json({ message: "Erreur interne du serveur", status: "KO" });
-    }
-  }
 
   async accueilSearch(req: ControllerRequest, res: Response) {
     try {
@@ -1086,6 +1102,7 @@ class ClientController {
     }
   }
 
+
   async bloquer(req: ControllerRequest, res: Response) {
     try {
       const { userIdToBlock } = req.body; // L'ID de l'utilisateur à bloquer
@@ -1170,6 +1187,7 @@ class ClientController {
           .status(401)
           .json({ message: "Utilisateur non authentifié", status: "KO" });
       }
+
 
       const compte = await prisma.compte.findUnique({
         where: { id: idCompte },
