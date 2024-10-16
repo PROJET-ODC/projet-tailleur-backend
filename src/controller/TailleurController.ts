@@ -106,6 +106,47 @@ class TailleurController {
     }
   }
 
+
+async getAllPostTailleur(req: ControllerRequest, res: Response) {
+        try {
+            // On récupère l'utilisateur connecté à partir de l'ID dans le token (idCompte)
+            const idCompte = parseInt(req.id as string, 10); // ID du compte connecté
+    
+            // Requête pour récupérer le tailleur correspondant à ce compte
+            const tailleur = await prisma.tailleur.findUnique({
+                where: { compte_id: idCompte }, // Filtrer le tailleur par son compte
+            });
+    
+            // Vérifier si un tailleur a été trouvé pour ce compte
+            if (!tailleur) {
+                return res.status(404).json({ message: 'Tailleur non trouvé pour ce compte', status: 'KO' });
+            }
+    
+            // Récupérer tous les posts associés à ce tailleur
+            const posts = await prisma.post.findMany({
+                where: { tailleur_id: tailleur.id }, // Filtrer les posts par l'ID du tailleur trouvé
+                include: {
+                    comments: true, // Par exemple, inclure les commentaires associés aux posts
+                },
+            });
+    
+            // Vérifier s'il y a des posts
+            if (posts.length === 0) {
+                return res.json({ posts: [], message: 'Aucun post trouvé pour ce tailleur', status: 'OK' });
+            }
+    
+            return res.json({ posts, message: 'Posts récupérés avec succès', status: 'OK' });
+        } catch (error) {
+            // Gestion des erreurs
+            if (error instanceof Error) {
+                return res.status(500).json({ message: 'Erreur lors de la récupération des posts', error: error.message });
+            }
+        }
+    }
+
+
+
+
   async createPost(req: ControllerRequest, res: Response) {
     try {
       const idCompte = parseInt(req.id!);
