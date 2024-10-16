@@ -12,7 +12,7 @@ router.use(isTailleurAuthenticated);
 
 router.route('/status').post(tailleurController.createStatus).delete(tailleurController.deleteStatus);
 
-router.route('/posts').post(tailleurController.createPost);
+router.route('/posts').post(tailleurController.createPost).get(tailleurController.getPosts);
 
 router.route('/posts/:postId').put(tailleurController.updatePost).delete(tailleurController.deletePost);
 
@@ -26,6 +26,9 @@ router.route('/approvisions')
     .get(tailleurController.getAllApprovisions);
     // .post(tailleurController.addApprovisions);
 router.route('/approvisions/details').get(tailleurController.detailsApprovisions);
+
+router.route('/listcommandes').get(tailleurController.listCommandes);
+
 
 // Route to list articles by category
 // router.get('/categories/:categoryId/articles', tailleurController.listArticlesByCategory);

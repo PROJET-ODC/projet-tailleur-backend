@@ -171,7 +171,7 @@ class AuthController {
           createdAt: new Date(),
           etat: "active",
           bio,
-          credit: 0,
+          credit: 10,
         },
       });
 

@@ -16,6 +16,6 @@ router.route('/commandes')
 router.route('/commandes/validate')
     .post(vendeurController.validateCommandes);
 
-router.route('/listcommandes')
-    .get(vendeurController.listCommandes);
+// router.route('/listcommandes')
+//     .get(vendeurController.listCommandes);
 export { router };
