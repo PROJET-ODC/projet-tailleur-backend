@@ -25,9 +25,9 @@ router.route('/approvisions').get(tailleurController.getAllApprovisions).post(ta
 router.route('/approvisions/payereste').post(tailleurController.payerResteCommande);
 
 router.route('/approvisions/details').get(tailleurController.detailsApprovisions);
+router.route('/allposts').get(tailleurController.getAllPostTailleur);
 
 router.route('/listcommandes').get(tailleurController.listCommandes);
-
 
 // Route to list articles by category
 // router.get('/categories/:categoryId/articles', tailleurController.listArticlesByCategory);
