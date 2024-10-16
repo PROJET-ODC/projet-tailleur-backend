@@ -519,20 +519,40 @@ model TaillePost {
   @@map("taille_posts")
 }
 
-model Commande {
-  id        Int        @id @default(autoincrement())
-  post_id   Int
-  compte_id Int
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @default(now())
-  compte    Compte     @relation(fields: [compte_id], references: [id])
-  post      Post       @relation(fields: [post_id], references: [id])
-  paiement  Paiement[]
+// model Commande {
+//   id        Int        @id @default(autoincrement())
+//   post_id   Int
+//   compte_id Int
+//   taille  Decimal
+//   qte  Decimal
+//   createdAt DateTime   @default(now())
+//   updatedAt DateTime   @default(now())
+//   compte    Compte     @relation(fields: [compte_id], references: [id])
+//   post      Post       @relation(fields: [post_id], references: [id])
+//   paiement  Paiement[]
 
-  @@index([compte_id], map: "commandes_compte_id_fkey")
-  @@index([post_id], map: "commandes_post_id_fkey")
-  @@map("commandes")
+//   @@index([compte_id], map: "commandes_compte_id_fkey")
+//   @@index([post_id], map: "commandes_post_id_fkey")
+//   @@map("commandes")
+// }
+
+model Commande {
+    id        Int        @id @default(autoincrement())
+    post_id   Int
+    compte_id Int
+    taille    Decimal?   // Assurez-vous que c'est bien ici
+    qte       Decimal?   // Assurez-vous que c'est bien ici
+    createdAt DateTime   @default(now())
+    updatedAt DateTime   @default(now())
+    compte    Compte     @relation(fields: [compte_id], references: [id])
+    post      Post       @relation(fields: [post_id], references: [id])
+    paiement  Paiement[]
+
+    @@index([compte_id], map: "commandes_compte_id_fkey")
+    @@index([post_id], map: "commandes_post_id_fkey")
+    @@map("commandes")
 }
+
 
 model Paiement {
   id          Int      @id @default(autoincrement())

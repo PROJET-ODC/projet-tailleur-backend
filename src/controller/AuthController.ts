@@ -5,51 +5,27 @@ import { createJWT } from "../utils/jwt.js";
 import { ControllerRequest } from "../interface/Interface.js";
 import { v2 as cloudinary } from "cloudinary";
 import { env } from "process";
+import { uploadImageCloud } from "../utils/uploadFile.js";
+import { UploadedFile } from "express-fileupload";
 
 const prisma = new PrismaClient();
 
 class AuthController {
-  uploadProfile(req: ControllerRequest, res: Response) {
-    cloudinary.config({
-      cloud_name: process.env.CLOUDINARY_NAME,
-      api_key: process.env.CLOUDINARY_API_KEY,
-      api_secret: process.env.CLOUDINARY_API_SECRET,
-    });
-
-    if (!req.files || Object.keys(req.files).length === 0) {
-      return res
-        .status(400)
-        .json({ message: "Aucun fichier uploadé", status: "KO" });
-    }
-
-    const file = req.files["picture"];
-    const uploadedFile = Array.isArray(file) ? file[0] : file;
-
-    // Upload the file to Cloudinary
-    cloudinary.uploader.upload(
-      uploadedFile.tempFilePath, // Use tempFilePath for express-fileupload
-      { folder: "profile_pictures" },
-      (error, result) => {
-        if (error) {
-          return res
-            .status(500)
-            .json({ message: "Erreur lors de l'upload", status: "KO", error });
-        }
-        if (result) {
-          res.status(200).json({
-            message: "Upload réussi",
-            status: "OK",
-            url: result.secure_url,
-          });
-        } else {
-          res.status(500).json({
-            message: "Erreur lors de l'upload",
-            status: "KO",
-            error: "Résultat de l'upload non défini",
-          });
-        }
+  async uploadProfile(req: ControllerRequest, res: Response) {
+    try {
+      if (!req.files) {
+        return res
+          .status(400)
+          .json({ message: "Le fichier est requis", status: "KO" });
       }
-    );
+      const imageUpload = req.files.image as UploadedFile;
+
+      const result = await uploadImageCloud(imageUpload, "profiles");
+
+      return result;
+    } catch (error) {
+      return "";
+    }
   }
 
   async login(req: ControllerRequest, res: Response) {
@@ -58,11 +34,13 @@ class AuthController {
 
       /**
        * Faire ici la validation des champs
-       */
-
-      // Trouver l'utilisateur par e-mail
+       **/
       const compte = await prisma.compte.findUnique({
         where: { email },
+      });
+
+      const user = await prisma.user.findUnique({
+        where: { id: compte?.user_id },
       });
 
       if (!compte) {
@@ -71,7 +49,7 @@ class AuthController {
           .json({ message: "Utilisateur non trouvé", status: "KO" });
       }
 
-      if (compte.etat === "DESACTIVE") {
+      if (compte.etat === "desactive") {
         return res
           .status(200)
           .json({ message: "Votre compte est desactivé", status: "KO" });
@@ -92,6 +70,7 @@ class AuthController {
         email: compte.email,
         identifiant: compte.identifiant,
         role: compte.role,
+        picture: user?.picture,
       });
 
       res
@@ -125,10 +104,12 @@ class AuthController {
         role,
         phone,
         city,
-        picture,
         bio,
       } = req.body;
 
+      const pictureUpload = req.files?.picture as UploadedFile;
+
+      const image: string = await uploadImageCloud(pictureUpload, "profiles");
       /**
        * Faire ici la validation des champs
        */
@@ -173,7 +154,7 @@ class AuthController {
           firstname,
           phone,
           city,
-          picture,
+          picture: image,
           updatedAt: new Date(),
           createdAt: new Date(),
         },
@@ -188,7 +169,7 @@ class AuthController {
           user_id: user.id,
           updatedAt: new Date(),
           createdAt: new Date(),
-          etat: "ACTIVE",
+          etat: "active",
           bio,
           credit:20,
         },
@@ -204,7 +185,7 @@ class AuthController {
         });
       }
 
-      if (role === "USER") {
+      if (role === "client") {
         await prisma.client.create({
           data: {
             compte_id: compte.id,
@@ -214,7 +195,7 @@ class AuthController {
         });
       }
 
-      if (role === "VENDEUR") {
+      if (role === "vendeur") {
         await prisma.vendeur.create({
           data: {
             compte_id: compte.id,
