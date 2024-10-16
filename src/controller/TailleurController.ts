@@ -747,98 +747,7 @@ class TailleurController {
     }
 
 
-    async payerResteCommande(req: ControllerRequest, res: Response) {
-        try {
-            const {commande_id, montant} = req.body;
-            const compte_id = parseInt(req.id!);
-
-            // Valider les entrées
-            if (!commande_id || !montant) {
-                return res.status(400).json({
-                    message: "Commande ID et montant sont requis",
-                    status: 'KO'
-                });
-            }
-            const parsedCommandeId = parseInt(commande_id);
-            const parsedMontant = parseFloat(montant);
-            console.log("ID de la commande pour le paiement:", parsedCommandeId);
-
-            // Vérifier si le tailleur existe
-            const tailleur = await prisma.tailleur.findUnique({
-                where: {compte_id}
-            });
-
-            if (!tailleur) {
-                return res.status(404).json({
-                    message: "Tailleur non trouvé",
-                    status: 'KO'
-                });
-            }
-
-            // Vérifier si la commande existe et appartient au tailleur
-            const commande = await prisma.commandeArticle.findUnique({
-                where: {id: parsedCommandeId},
-            });
-
-            if (!commande || commande.tailleur_id !== tailleur.id) {
-                return res.status(404).json({
-                    message: "Commande non trouvée ou vous n'avez pas la permission de la payer",
-                    status: 'KO'
-                });
-            }
-
-            // Vérifier que la commande existe avant de créer le paiement
-            if (!commande) {
-                return res.status(404).json({
-                    message: "Commande non trouvée",
-                    status: 'KO'
-                });
-            }
-
-            // Récupérer le montant versé actuellement pour cette commande
-            const paiements = await prisma.paiementArticle.findMany({
-                where: {commande_id: parsedCommandeId}
-            });
-
-            const montantVerse = paiements.reduce((total, paiement) => total.plus(paiement.montant), new Decimal(0));
-
-            // Ajouter le nouveau montant versé
-            const totalVerse = montantVerse.plus(new Decimal(parsedMontant));
-
-            // Insérer le nouveau paiement
-            await prisma.paiementArticle.create({
-                data: {
-                    montant: parsedMontant,
-                    commande_id: parsedCommandeId, // Utiliser l'entier parsedCommandeId ici
-                }
-            });
-
-            // Vérifier si le montant total a été atteint
-            let etatPaiement: etatCommande = etatCommande.EN_ATTENTE;
-            if (totalVerse.gte(new Decimal(commande.montantTotal))) {
-                etatPaiement = etatCommande.TERMINER;
-            }
-
-            // Mettre à jour l'état de la commande si nécessaire
-            await prisma.commandeArticle.update({
-                where: {id: parsedCommandeId},
-                data: {
-                    etat: etatPaiement
-                }
-            });
-
-            return res.status(200).json({
-                message: `Paiement de ${parsedMontant} a été ajouté. Statut du paiement: ${etatPaiement}`,
-                status: 'OK'
-            });
-
-        } catch (err) {
-            if (err instanceof Error) {
-                return res.status(500).json({message: err.message, status: 'KO'});
-            }
-        }
-    }
-
+ 
 
     // async detailsApprovisions(req: ControllerRequest, res: Response) {
     //     const articles = await prisma.article.findMany({
@@ -867,6 +776,152 @@ class TailleurController {
     //             });
     //     }
     // }
+
+// Method to fetch an article by slug
+
+
+async getArticleBySlug(req: ControllerRequest, res: Response) {
+    try {
+        const {slug} = req.params;
+
+        // Ensure req.id is treated as a number
+        const compteId = parseInt(req.id as string);
+
+        const article = await prisma.article.findFirst({
+            where: {
+                slug: slug,
+                etat: "ACTIF",
+                vendeur: {
+                    compte_id: compteId, // Now compte_id is a number
+                },
+            },
+            include: {
+                article_unite: true,
+                couleur_article: true,
+                stock: true,
+            },
+        });
+
+        if (article) {
+            res.json({article, status: "OK"});
+        } else {
+            res.status(404).json({message: "Article not found", status: "KO"});
+        }
+    } catch (error) {
+        console.error("Error fetching article by slug:", error);
+        res.status(500).json({message: "Server error", status: "KO"});
+    }
+}
+
+async getArticleCategories(req: ControllerRequest, res: Response) {
+
+    try {
+        const categories = await prisma.categorie.findMany();
+        console.log(categories)
+
+        res.status(200).json(categories);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({message: "Erreur lors de la récupération des catégories"});
+    }
+
+}
+
+async payerResteCommande(req: ControllerRequest, res: Response) {
+    try {
+        const {commande_id, montant} = req.body;
+        const compte_id = parseInt(req.id!);
+
+        // Valider les entrées
+        if (!commande_id || !montant) {
+            return res.status(400).json({
+                message: "Commande ID et montant sont requis",
+                status: 'KO'
+            });
+        }
+        const parsedCommandeId = parseInt(commande_id);
+        const parsedMontant = parseFloat(montant);
+        console.log("ID de la commande pour le paiement:", parsedCommandeId);
+
+        // Vérifier si le tailleur existe
+        const tailleur = await prisma.tailleur.findUnique({
+            where: {compte_id}
+        });
+
+        if (!tailleur) {
+            return res.status(404).json({
+                message: "Tailleur non trouvé",
+                status: 'KO'
+            });
+        }
+
+        // Vérifier si la commande existe et appartient au tailleur
+        const commande = await prisma.commandeArticle.findUnique({
+            where: {id: parsedCommandeId},
+        });
+
+        if (!commande || commande.tailleur_id !== tailleur.id) {
+            return res.status(404).json({
+                message: "Commande non trouvée ou vous n'avez pas la permission de la payer",
+                status: 'KO'
+            });
+        }
+
+        // Vérifier que la commande existe avant de créer le paiement
+        if (!commande) {
+            return res.status(404).json({
+                message: "Commande non trouvée",
+                status: 'KO'
+            });
+        }
+
+        // Récupérer le montant versé actuellement pour cette commande
+        const paiements = await prisma.paiementArticle.findMany({
+            where: {commande_id: parsedCommandeId}
+        });
+
+        const montantVerse = paiements.reduce((total, paiement) => total.plus(paiement.montant), new Decimal(0));
+
+        // Ajouter le nouveau montant versé
+        const totalVerse = montantVerse.plus(new Decimal(parsedMontant));
+
+        // Insérer le nouveau paiement
+        await prisma.paiementArticle.create({
+            data: {
+                montant: parsedMontant,
+                commande_id: parsedCommandeId, // Utiliser l'entier parsedCommandeId ici
+            }
+        });
+
+        // Vérifier si le montant total a été atteint
+        let etatPaiement: etatCommande = etatCommande.EN_ATTENTE;
+        if (totalVerse.gte(new Decimal(commande.montantTotal))) {
+            etatPaiement = etatCommande.TERMINER;
+        }
+
+        // Mettre à jour l'état de la commande si nécessaire
+        await prisma.commandeArticle.update({
+            where: {id: parsedCommandeId},
+            data: {
+                etat: etatPaiement
+            }
+        });
+
+        return res.status(200).json({
+            message: `Paiement de ${parsedMontant} a été ajouté. Statut du paiement: ${etatPaiement}`,
+            status: 'OK'
+        });
+
+    } catch (err) {
+        if (err instanceof Error) {
+            return res.status(500).json({message: err.message, status: 'KO'});
+        }
+    }
+}
+
+
+
+
 
     async addApprovisions(req: ControllerRequest, res: Response) {
         const {montant, commande_id} = req.body;
@@ -931,79 +986,31 @@ class TailleurController {
 
     }
 
-// Method to fetch an article by slug
-    async getArticleBySlug(req: ControllerRequest, res: Response) {
-        try {
-            const {slug} = req.params;
+    
+//     async getAllApprovisions(req: ControllerRequest, res: Response): Promise<void> {
+//         try {
+//             // Assurez-vous que 'id' est défini et est un nombre
+//             const tailleurId = Number(req.id);
+//             if (!tailleurId) {
+//                 res.status(400).json({error: 'Tailleur ID manquant'});
+//                 return;
+//             }
 
-            // Ensure req.id is treated as a number
-            const compteId = parseInt(req.id as string);
+// // Requête pour récupérer les commandes du tailleur
+//             const commandes = await prisma.commandeArticle.findMany({
+//                 where: {tailleur_id: tailleurId},
+//                 // include: {
+//                 //     detailcommandes: true,
+//                 //     paiement: true
+//                 // }
+//             });
 
-            const article = await prisma.article.findFirst({
-                where: {
-                    slug: slug,
-                    etat: "ACTIF",
-                    vendeur: {
-                        compte_id: compteId, // Now compte_id is a number
-                    },
-                },
-                include: {
-                    article_unite: true,
-                    couleur_article: true,
-                    stock: true,
-                },
-            });
-
-            if (article) {
-                res.json({article, status: "OK"});
-            } else {
-                res.status(404).json({message: "Article not found", status: "KO"});
-            }
-        } catch (error) {
-            console.error("Error fetching article by slug:", error);
-            res.status(500).json({message: "Server error", status: "KO"});
-        }
-    }
-
-    async getArticleCategories(req: ControllerRequest, res: Response) {
-
-        try {
-            const categories = await prisma.categorie.findMany();
-            console.log(categories)
-
-            res.status(200).json(categories);
-        } catch (error) {
-            console.error(error);
-            res.status(500).json({message: "Erreur lors de la récupération des catégories"});
-        }
-
-    }
-
-
-    async getAllApprovisions(req: ControllerRequest, res: Response): Promise<void> {
-        try {
-            // Assurez-vous que 'id' est défini et est un nombre
-            const tailleurId = Number(req.id);
-            if (!tailleurId) {
-                res.status(400).json({error: 'Tailleur ID manquant'});
-                return;
-            }
-
-// Requête pour récupérer les commandes du tailleur
-            const commandes = await prisma.commandeArticle.findMany({
-                where: {tailleur_id: tailleurId},
-                // include: {
-                //     detailcommandes: true,
-                //     paiement: true
-                // }
-            });
-
-            res.json(commandes);
-        } catch (error) {
-            console.error('Erreur lors de la récupération des commandes:', error);
-            res.status(500).json({error: 'Erreur serveur'});
-        }
-    }
+//             res.json(commandes);
+//         } catch (error) {
+//             console.error('Erreur lors de la récupération des commandes:', error);
+//             res.status(500).json({error: 'Erreur serveur'});
+//         }
+//     }
 
     async detailsApprovisions(req: ControllerRequest, res: Response): Promise<void> {
         try {
@@ -1028,6 +1035,89 @@ class TailleurController {
             res.status(500).json({error: 'Erreur serveur'});
         }
     }
+
+
+
+
+    async getAllApprovisions(req: ControllerRequest, res: Response): Promise<void> {
+        try {
+            // Extract the filter query from the request query parameters
+            const { libelle } = req.query;
+    
+            // Build the query object
+            const query: any = {
+                include: {
+                    article: {
+                        select: {
+                            libelle: true,
+                            image: true
+                        }
+                    }
+                }
+            };
+    
+            // If libelle filter is provided, add it to the query
+            if (libelle) {
+                query.where = {
+                    article: {
+                        libelle: {
+                            contains: libelle,
+                            mode: 'insensitive'
+                        }
+                    }
+                };
+            }
+    
+            // Requête pour récupérer tous les approvisionnements
+            const approvisionnements = await prisma.stock.findMany(query);
+    
+            // Retourner les approvisionnements trouvés ou un tableau vide
+            res.json(approvisionnements);
+        } catch (error) {
+            console.error('Erreur lors de la récupération des approvisionnements:', error);
+            res.status(500).json({ error: 'Erreur serveur' });
+        }
+    }
+    
+    
+    
+
+    async listCommandes(req: ControllerRequest, res: Response) {
+        try {
+            // Récupérer toutes les commandes avec taille, qte, et montant des paiements
+            const commandes = await prisma.commande.findMany({
+                select: {
+                    id: true,
+                    taille: true, // Inclure la taille
+                    qte: true, // Inclure la quantité (qte)
+                    createdAt: true,
+                    updatedAt: true,
+                    post: true, // Inclure les informations du post
+                    compte: true, // Inclure les informations du compte
+                    // Inclure les paiements avec montant
+                    paiement: {
+                        select: {
+                            montant: true, // Inclure le montant du paiement
+                            createdAt: true // Optionnel : inclure la date de paiement
+                        }
+                    }
+                },
+                distinct: ['id'], // Assurer l'unicité des commandes
+            });
+    
+            // Vérifier si des commandes existent
+            if (commandes.length === 0) {
+                return res.status(404).json({ message: 'Aucune commande trouvée', status: 'KO' });
+            }
+    
+            // Retourner les commandes trouvées
+            return res.json({ commandes, message: "Les commandes sont récupérées avec succès", status: "OK" });
+        } catch (err) {
+            console.error("Erreur lors de la récupération des commandes :", err); // Log de l'erreur
+            return res.status(500).json({ message: 'Erreur lors de la récupération des commandes', status: "KO" });
+        }
+    }
+    
 
 }
 
