@@ -1,10 +1,9 @@
 import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
+
 import { PrismaClient } from "@prisma/client";
 import { Response } from "express";
 import { ControllerRequest } from "../interface/Interface";
-// import Decimal from 'decimal.js';
-
 import { etatCommande } from "@prisma/client"; // Importez l'énumération
 import { Decimal } from "@prisma/client/runtime/library";
 import { uploadImageCloud, uploadImageLocal } from "../utils/uploadFile.js";
@@ -456,6 +455,7 @@ class TailleurController {
         return res.status(500).json({ message: err.message, status: "KO" });
       }
     }
+  }
 
 // Method to fetch an article by slug
 
@@ -666,9 +666,6 @@ async payerResteCommande(req: ControllerRequest, res: Response) {
 
     }
 
-    
-
-
     async detailsApprovisions(req: ControllerRequest, res: Response): Promise<void> {
         try {
             // Supposons que commande_id soit envoyé dans req.body
@@ -693,9 +690,22 @@ async payerResteCommande(req: ControllerRequest, res: Response) {
         }
     }
 
+async getAllArticles(req: Request, res: Response): Promise<void> {
+  try {
+      const articles = await prisma.article.findMany({
+          include: {
+              article_unite: true,
+              couleur_article: true,
+              stock: true,
+          },
+      });
 
-
-
+      res.json(articles);
+  } catch (error) {
+      console.error('Erreur lors de la récupération des articles:', error);
+      res.status(500).json({ error: 'Erreur serveur' });
+  }
+}
     async getAllApprovisions(req: ControllerRequest, res: Response): Promise<void> {
         try {
             // Extract the filter query from the request query parameters
@@ -775,9 +785,6 @@ async payerResteCommande(req: ControllerRequest, res: Response) {
         }
     }
     
-
-
-  }
 
   async payerResteCommande(req: ControllerRequest, res: Response) {
     try {
@@ -1028,6 +1035,7 @@ async payerResteCommande(req: ControllerRequest, res: Response) {
       res.status(500).json({ error: "Erreur serveur" });
     }
   }
+  
 }
 
 export default new TailleurController();
