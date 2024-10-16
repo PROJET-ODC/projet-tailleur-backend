@@ -9,7 +9,6 @@ import {
 import { PrismaClient } from "@prisma/client";
 import { ControllerRequest } from "../interface/Interface.js";
 import { Response } from "express";
-// import { io, users } from '../socket'; // Importe l'instance de Socket.IO et la variable users
 
 const prisma = new PrismaClient();
 
@@ -22,6 +21,8 @@ class ClientController {
       }
     }
   }
+
+  async getAuthUser(req: ControllerRequest, res: Response) {}
 
   // Ajouter un like$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
   async addLike(req: ControllerRequest, res: Response) {
@@ -70,13 +71,11 @@ class ClientController {
           },
         });
 
-        return res
-          .status(201)
-          .json({
-            message: "Like ajouté avec succès",
-            data: newLike,
-            status: "OK",
-          });
+        return res.status(201).json({
+          message: "Like ajouté avec succès",
+          data: newLike,
+          status: "OK",
+        });
       }
     } catch (err) {
       if (err instanceof Error) {
@@ -90,6 +89,7 @@ class ClientController {
     try {
       const postId = parseInt(req.body.postId);
       const compteId = parseInt(req.body.compteId);
+
 
       const existingDislike = await prisma.like.findFirst({
         where: { post_id: postId, compte_id: compteId },
@@ -118,28 +118,27 @@ class ClientController {
           });
         }
       } else {
+
         const newDislike = await prisma.like.create({
           data: {
             post_id: postId,
             compte_id: compteId,
-            etat: "DISLIKE",
-            createdAt: new Date(),
+            etat: "DISLIKE",            createdAt: new Date(),
             updatedAt: new Date(),
           },
         });
 
-        return res
-          .status(201)
-          .json({
-            message: "Dislike ajouté avec succès",
-            data: newDislike,
-            status: "OK",
-          });
+        return res.status(201).json({
+          message: "Dislike ajouté avec succès",
+          data: newDislike,
+          status: "OK",
+        });
       }
     } catch (err) {
       if (err instanceof Error) {
         return res.status(500).json({ message: err.message, status: "KO" });
       }
+
     }
   }
 
@@ -152,13 +151,11 @@ class ClientController {
         where: { compte_id: userId }, // Utilisation du champ correct `compte_id`
       });
 
-      return res
-        .status(200)
-        .json({
-          notifications,
-          message: "Notifications chargées.",
-          status: "OK",
-        });
+      return res.status(200).json({
+        notifications,
+        message: "Notifications chargées.",
+        status: "OK",
+      });
     } catch (error) {
       if (error instanceof Error) {
         return res.status(500).json({ message: error.message, status: "KO" });
@@ -169,7 +166,9 @@ class ClientController {
   async sendMessage(req: ControllerRequest, res: Response) {
     try {
       const { messaged_id, texte } = req.body;
-      const messager_id = parseInt(req.id!); // L'ID de l'expéditeur (utilisateur connecté)
+      const messager_id = parseInt(req.id!); // Obtenez l'ID du client connecté depuis la requête `req.id`
+      // Utilisation du champ correct `id` du client connecté
+
       const messaged_id1 = parseInt(messaged_id);
 
       // Vérifiez que tous les champs requis sont présents
@@ -178,16 +177,14 @@ class ClientController {
         typeof messaged_id1 !== "number" ||
         typeof texte !== "string"
       ) {
-        return res
-          .status(400)
-          .json({
-            message:
-              "Les champs messager_id, messaged_id et texte sont requis et doivent être du bon type.",
-            status: "KO",
-          });
+        return res.status(400).json({
+          message:
+            "Les champs messager_id, messaged_id et texte sont requis et doivent être du bon type.",
+          status: "KO",
+        });
       }
 
-      // Créer un nouveau message dans la base de données
+      // Créez un nouveau message
       const newMessage = await prisma.message.create({
         data: {
           messager_id,
@@ -196,27 +193,9 @@ class ClientController {
         },
       });
 
-      console.log("Message enregistré:", newMessage);
+      console.log(newMessage);
 
-      // Vérification si le destinataire est connecté via Socket.IO
-      // const receiverSocketId = users[messaged_id1];
-
-      // if (receiverSocketId) {
-      //     // Envoyer le message via Socket.IO au destinataire
-      //     io.to(receiverSocketId).emit('receiveMessage', {
-      //         senderId: messager_id,
-      //         message: newMessage.texte,
-      //     });
-      //     console.log(`Message envoyé à l'utilisateur ${messaged_id1} via Socket.IO`);
-      // } else {
-      //     // Si le destinataire n'est pas connecté, notifier l'expéditeur ou loguer
-      //     console.log(`L'utilisateur ${messaged_id1} n'est pas connecté.`);
-      // }
-
-      // Retourner la réponse après l'enregistrement et l'envoi
-      res
-        .status(201)
-        .json({ message: "Message envoyé et sauvegardé.", status: newMessage });
+      res.status(201).json({ message: "Message envoyé", status: newMessage });
     } catch (error) {
       if (error instanceof Error) {
         res.status(500).json({ message: error.message, status: "KO" });
@@ -224,34 +203,35 @@ class ClientController {
     }
   }
 
-  async getMesssage(req: ControllerRequest, res: Response): Promise<Response> {
-    try {
-        // Récupération de l'ID utilisateur à partir des paramètres de la requête
-        const userId = Number(req.params.user_id);
 
-        // Vérification que l'ID utilisateur est valide
-        if (isNaN(userId)) {
-            return res.status(400).json({ message: "ID utilisateur invalide", status: "KO" });
-        }
+async getMesssage(req: ControllerRequest, res: Response): Promise<Response> {
+  try {
+      // Récupération de l'ID utilisateur à partir des paramètres de la requête
+      const userId = Number(req.params.user_id);
 
-        // Récupération des messages associés à cet utilisateur
-        const messages = await prisma.message.findMany({
-            where: { messager_id: userId },
-            orderBy: { createdAt: 'desc' } 
-        });
+      // Vérification que l'ID utilisateur est valide
+      if (isNaN(userId)) {
+          return res.status(400).json({ message: "ID utilisateur invalide", status: "KO" });
+      }
 
-        // Vérification si l'utilisateur a des messages
-        if (messages.length === 0) {
-            return res
-              .status(404)
-              .json({ message: "Aucune discussion trouvée pour cet utilisateur", status: "KO" });
-        }
+      // Récupération des messages associés à cet utilisateur
+      const messages = await prisma.message.findMany({
+          where: { messager_id: userId },
+          orderBy: { createdAt: 'desc' } 
+      });
 
-        // Renvoie des messages avec un statut de succès
-        return res.status(200).json({ messages, status: "OK" });
-    } catch (err: any) {
-        return res.status(500).json({ message: err.message, status: "KO" });
-    }
+      // Vérification si l'utilisateur a des messages
+      if (messages.length === 0) {
+          return res
+            .status(404)
+            .json({ message: "Aucune discussion trouvée pour cet utilisateur", status: "KO" });
+      }
+
+      // Renvoie des messages avec un statut de succès
+      return res.status(200).json({ messages, status: "OK" });
+  } catch (err: any) {
+      return res.status(500).json({ message: err.message, status: "KO" });
+  }
 }
 
   async getFavoriteById(
@@ -529,12 +509,10 @@ class ClientController {
 
       return res.json({ message: "Commentaire supprimé", status: "OK" });
     } catch (error: any) {
-      return res
-        .status(500)
-        .json({
-          message: "Erreur lors de la suppression du commentaire",
-          status: "KO",
-        });
+      return res.status(500).json({
+        message: "Erreur lors de la suppression du commentaire",
+        status: "KO",
+      });
     }
   }
 
@@ -707,21 +685,17 @@ class ClientController {
           .json({ message: "Post non trouvé après mise à jour", status: "KO" });
       }
 
-      return res
-        .status(200)
-        .json({
-          message: "Partage réussi.",
-          data: { shareNb: post.shareNb },
-          status: "OK",
-        });
+      return res.status(200).json({
+        message: "Partage réussi.",
+        data: { shareNb: post.shareNb },
+        status: "OK",
+      });
     } catch (error: any) {
-      return res
-        .status(500)
-        .json({
-          message: "Erreur lors du partage.",
-          error: error.message,
-          status: "KO",
-        });
+      return res.status(500).json({
+        message: "Erreur lors du partage.",
+        error: error.message,
+        status: "KO",
+      });
     }
   }
 
@@ -770,41 +744,20 @@ class ClientController {
             AND: [{ tailleur_id: tailleur?.id }, { status: "PUBLIE" }],
           },
         });
+    }
+  }
+
 
         if (!tailleur || !user || !compte) {
-          return res
-            .status(404)
-            .json({
-              message: "Impossible de charger le profile demandé",
-              status: "KO",
-            });
+          return res.status(404).json({
+            message: "Impossible de charger le profile demandé",
+            status: "KO",
+          });
         }
 
         return res.json({ tailleur, user, compte, posts, status: "OK" });
       }
 
-      const client = await prisma.client.findUnique({
-        where: { compte_id: id },
-      });
-
-      if (!client || !user || !compte) {
-        return res
-          .status(404)
-          .json({
-            message: "Impossible de charger le profile demandé",
-            status: "KO",
-          });
-      }
-
-      const followersPosts = await this.getMyFollowersPost(compte.id);
-
-      return res.json({ client, user, compte, followersPosts, status: "OK" });
-    } catch (error) {
-      return res
-        .status(500)
-        .json({ message: "Erreur interne du serveur", status: "KO" });
-    }
-  }
 
   async accueilSearch(req: ControllerRequest, res: Response) {
     try {
@@ -999,12 +952,10 @@ class ClientController {
         const noteToShow = totalDesNotes / notes.length || 0;
 
         if (!tailleur || !user || !compte) {
-          return res
-            .status(404)
-            .json({
-              message: "Impossible de charger le profile demandé",
-              status: "KO",
-            });
+          return res.status(404).json({
+            message: "Impossible de charger le profile demandé",
+            status: "KO",
+          });
         }
         return res.json({
           tailleur,
@@ -1022,12 +973,10 @@ class ClientController {
         where: { compte_id: id },
       });
       if (!client || !user || !compte) {
-        return res
-          .status(404)
-          .json({
-            message: "Impossible de charger le profile demandé",
-            status: "KO",
-          });
+        return res.status(404).json({
+          message: "Impossible de charger le profile demandé",
+          status: "KO",
+        });
       }
       const followersPosts = await this.getMyFollowersPost(compte.id);
       return res.json({ client, user, compte, followersPosts, status: "OK" });
@@ -1073,12 +1022,10 @@ class ClientController {
       });
 
       if (!commentResponse) {
-        return res
-          .status(404)
-          .json({
-            message: "Réponse de commentaire non trouvée",
-            status: "KO",
-          });
+        return res.status(404).json({
+          message: "Réponse de commentaire non trouvée",
+          status: "KO",
+        });
       }
 
       return res.json({
@@ -1086,12 +1033,10 @@ class ClientController {
         status: "OK",
       });
     } catch (error: any) {
-      return res
-        .status(500)
-        .json({
-          message: "Erreur lors de la suppression de la réponse de commentaire",
-          status: "KO",
-        });
+      return res.status(500).json({
+        message: "Erreur lors de la suppression de la réponse de commentaire",
+        status: "KO",
+      });
     }
   }
 
@@ -1124,12 +1069,10 @@ class ClientController {
 
         // If any of the required entities are not found
         if (!tailleur || !user || !compte) {
-          return res
-            .status(404)
-            .json({
-              message: "Impossible de charger le profile demandé",
-              status: "KO",
-            });
+          return res.status(404).json({
+            message: "Impossible de charger le profile demandé",
+            status: "KO",
+          });
         }
 
         // Return the Tailleur's profile
@@ -1143,12 +1086,10 @@ class ClientController {
 
       // If any of the required entities are not found
       if (!client || !user || !compte) {
-        return res
-          .status(404)
-          .json({
-            message: "Impossible de charger le profile demandé",
-            status: "KO",
-          });
+        return res.status(404).json({
+          message: "Impossible de charger le profile demandé",
+          status: "KO",
+        });
       }
 
       // Return the Client's profile
@@ -1160,6 +1101,7 @@ class ClientController {
         .json({ message: "Erreur interne du serveur", status: "KO" });
     }
   }
+
 
   async bloquer(req: ControllerRequest, res: Response) {
     try {
@@ -1193,12 +1135,10 @@ class ClientController {
       });
 
       if (!userToBlock) {
-        return res
-          .status(404)
-          .json({
-            message: "Utilisateur à bloquer introuvable.",
-            status: "KO",
-          });
+        return res.status(404).json({
+          message: "Utilisateur à bloquer introuvable.",
+          status: "KO",
+        });
       }
 
       // Vérifier si le tailleur suit l'utilisateur à bloquer
@@ -1225,20 +1165,104 @@ class ClientController {
         },
       });
 
-      res
-        .status(200)
-        .json({
-          message: "L'utilisateur a été bloqué avec succès.",
-          status: "OK",
-        });
+      res.status(200).json({
+        message: "L'utilisateur a été bloqué avec succès.",
+        status: "OK",
+      });
     } catch (error) {
       console.error("Erreur lors du blocage de l'utilisateur:", error);
-      res
-        .status(500)
-        .json({
-          message: "Erreur lors du blocage de l'utilisateur",
-          status: "KO",
-        });
+      res.status(500).json({
+        message: "Erreur lors du blocage de l'utilisateur",
+        status: "KO",
+      });
+    }
+  }
+
+  async getSuggestions(req: ControllerRequest, res: Response) {
+    const idCompte = Number(req.id);
+
+    try {
+      if (!idCompte) {
+        return res
+          .status(401)
+          .json({ message: "Utilisateur non authentifié", status: "KO" });
+      }
+
+
+      const compte = await prisma.compte.findUnique({
+        where: { id: idCompte },
+      });
+
+      if (!compte) {
+        return res
+          .status(404)
+          .json({ message: "Utilisateur introuvable", status: "KO" });
+      }
+
+      const comptesNonSuivis = await prisma.compte.findMany({
+        where: {
+          AND: [
+            {
+              id: {
+                notIn: (
+                  await prisma.follow.findMany({
+                    where: { follower_id: idCompte },
+                    select: { followed_id: true },
+                  })
+                ).map((follow) => follow.followed_id),
+              },
+            },
+            {
+              id: {
+                not: idCompte, // Exclure le compte connecté lui-même
+              },
+            },
+          ],
+        },
+        select: {
+          id: true,
+          email: true,
+          identifiant: true,
+          user: {
+            select: {
+              firstname: true,
+              lastname: true,
+              picture: true,
+            },
+          },
+          noteds: {
+            select: {
+              note: true,
+            },
+          },
+        },
+      });
+
+      const comptesAvecSommeDesNotes = comptesNonSuivis.map((compte) => {
+        const sommeDesNotes = compte.noteds.reduce(
+          (total, note) => total + parseInt(note.note, 10),
+          0
+        );
+        return {
+          ...compte,
+          sommeDesNotes,
+        };
+      });
+
+      comptesAvecSommeDesNotes.sort(
+        (a, b) => b.sommeDesNotes - a.sommeDesNotes
+      );
+
+      return res.status(200).json({
+        suggestions: comptesAvecSommeDesNotes,
+        message: "liste de suggestions",
+        status: "OK",
+      });
+    } catch (error) {
+      res.status(500).json({
+        message: "Erreur lors de la récupération des suggestions",
+        status: "KO",
+      });
     }
   }
 }
