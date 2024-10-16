@@ -84,6 +84,59 @@ class ClientController {
   }
 }
 
+  async getAllFollowers(req: ControllerRequest, res: Response) {
+        try {
+            // On récupère l'utilisateur connecté à partir du token (supposé être stocké dans req.id)
+            const idCompte = parseInt(req.id as string, 10);
+    
+            // Requête pour récupérer les détails du compte utilisateur
+            const userAccount = await prisma.compte.findUnique({
+                where: { id: idCompte }, // Récupérer le compte utilisateur
+                include: { user: true }  // Inclure les détails de l'utilisateur
+            });
+    
+            // Vérifier si le compte utilisateur existe
+            if (!userAccount) {
+                return res.status(404).json({ message: 'Compte utilisateur non trouvé', status: 'KO' });
+            }
+    
+            // Requête pour récupérer les followers de l'utilisateur connecté (follower_id)
+            const followers = await prisma.follow.findMany({
+                where: { followed_id: idCompte },  // Filtrer par ceux qui suivent l'utilisateur connecté
+                include: {
+                    follower: { // Inclure les détails du follower (celui qui suit)
+                        include: {
+                            user: true // Inclure les détails de l'utilisateur qui est le follower
+                        }
+                    }
+                }
+            });
+    
+            // Vérifier si des followers existent
+            if (followers.length === 0) {
+                return res.json({
+                    userAccount, // Détails du compte utilisateur
+                    followers: [], // Liste vide des followers
+                    message: 'Aucun follower trouvé',
+                    status: 'OK'
+                });
+            }
+    
+            return res.json({
+                userAccount, // Détails du compte utilisateur
+                followers, // Liste des followers avec leurs détails
+                message: 'Followers récupérés avec succès',
+                status: 'OK'
+            });
+        } catch (error) {
+            // Meilleure gestion des erreurs pour un retour d'information plus précis
+            if (error instanceof Error) {
+                return res.status(500).json({ message: 'Erreur lors de la récupération des followers', error: error.message });
+            }
+        }
+    }
+
+
   // Ajouter un dislike$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
   async addDislike(req: ControllerRequest, res: Response) {
     try {
