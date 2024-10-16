@@ -1,11 +1,12 @@
 import {v2 as cloudinary} from "cloudinary";
 import fs from "fs";
 import {PrismaClient} from "@prisma/client";
-import {Response} from "express";
+// import {Response} from "express";
 import {ControllerRequest} from "../interface/Interface";
 // import Decimal from 'decimal.js';
 import {etatCommande} from '@prisma/client'; // Importez l'énumération
 import {Decimal} from '@prisma/client/runtime/library';
+import { Request, Response } from "express";
 
 
 const prisma = new PrismaClient();
@@ -737,7 +738,23 @@ class TailleurController {
         }
     }
 
+    async getAllArticles(req: Request, res: Response): Promise<void> {
+        try {
+            const articles = await prisma.article.findMany({
+                include: {
+                    article_unite: true,
+                    couleur_article: true,
+                    stock: true,
+                },
+            });
+    
+            res.json(articles);
+        } catch (error) {
+            console.error('Erreur lors de la récupération des articles:', error);
+            res.status(500).json({ error: 'Erreur serveur' });
+        }
+    }
+
 }
 
 export default new TailleurController();
-//772313145:FATIMA IMAN//
