@@ -179,6 +179,7 @@ class VendeurController {
         }
         return res.json({ message: "Les quantités des articles ont été mises à jour avec succès", status: "OK" });
     }
+
     async myCommandes(req: ControllerRequest, res: Response) {
         const id = parseInt(req.id!);
         const vendeur = await prisma.vendeur.findUnique({
@@ -221,57 +222,56 @@ class VendeurController {
 
     }
 
-    async listCommandes(req: ControllerRequest, res: Response) {
-        const vendeurId = parseInt(req.id!);
+    // async listCommandes(req: ControllerRequest, res: Response) {
+    //     const vendeurId = parseInt(req.id!);
     
-        // Vérification de l'existence du vendeur
-        const vendeur = await prisma.vendeur.findUnique({
-            where: { compte_id: vendeurId }
-        });
+    //     // Vérification de l'existence du vendeur
+    //     const vendeur = await prisma.vendeur.findUnique({
+    //         where: { compte_id: vendeurId }
+    //     });
     
-        if (!vendeur) {
-            return res.status(404).json({ message: 'Vendeur non trouvé', status: 'KO' });
-        }
+    //     if (!vendeur) {
+    //         return res.status(404).json({ message: 'Vendeur non trouvé', status: 'KO' });
+    //     }
     
-        console.log("Vendeur trouvé :", vendeur); // Log du vendeur
+    //     console.log("Vendeur trouvé :", vendeur); // Log du vendeur
     
-        try {
+    //     try {
 
             
-            // Récupérer les commandes où les articles appartiennent au vendeur
-            const commandes = await prisma.commandeArticle.findMany({
-                where: {
-                    detailcommandes: {
-                        some: {
-                            article: {
-                                vendeur_id: vendeur.id // ID du vendeur
-                            }
-                        }
-                    }
-                },
-                include: {
-                    paiement: true, // Inclure les paiements
-                    detailcommandes: {
-                        include: {
-                            article: true, // Inclure les articles
-                        }
-                    },
-                    tailleur: true, // Inclure les informations sur le tailleur
-                },
-                distinct: ['id'], // Assurer l'unicité des commandes
-            });
+    //         // Récupérer les commandes où les articles appartiennent au vendeur
+    //         const commandes = await prisma.commandeArticle.findMany({
+    //             where: {
+    //                 detailcommandes: {
+    //                     some: {
+    //                         article: {
+    //                             vendeur_id: vendeur.id // ID du vendeur
+    //                         }
+    //                     }
+    //                 }
+    //             },
+    //             include: {
+    //                 paiement: true, // Inclure les paiements
+    //                 detailcommandes: {
+    //                     include: {
+    //                         article: true, // Inclure les articles
+    //                     }
+    //                 },
+    //                 tailleur: true, // Inclure les informations sur le tailleur
+    //             },
+    //             distinct: ['id'], // Assurer l'unicité des commandes
+    //         });
     
-            console.log("Commandes récupérées :", commandes); // Log des commandes
+    //         console.log("Commandes récupérées :", commandes); // Log des commandes
     
-            return res.json({ commandes, message: "Les commandes sont récupérées avec succès", status: "OK" });
+    //         return res.json({ commandes, message: "Les commandes sont récupérées avec succès", status: "OK" });
     
-        } catch (err) {
-            console.error("Erreur lors de la récupération des commandes :", err); // Log de l'erreur
-            return res.status(500).json({ message: 'Erreur lors de la récupération des commandes', status: "KO" });
-        }
-    }
-    
-    
-    
+    //     } catch (err) {
+    //         console.error("Erreur lors de la récupération des commandes :", err); // Log de l'erreur
+    //         return res.status(500).json({ message: 'Erreur lors de la récupération des commandes', status: "KO" });
+    //     }
+    // }
+
+
 }
 export default new VendeurController();

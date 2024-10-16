@@ -2,7 +2,6 @@
   "CodeGPT.apiKey": "CodeGPT Plus Beta",
   "files.exclude": {
     "node_modules/*": "explorerExcludedFiles",
-    ".env": "explorerExcludedFiles",
     "RAM.js": "explorerExcludedFiles",
     "dist/tmp/*": "explorerExcludedFiles",
     ".vscode/*": "explorerExcludedFiles",
@@ -10,6 +9,7 @@
     "dist/seeds.js": "explorerExcludedFiles",
     "dist/playground-22.mongodb.js": "explorerExcludedFiles",
     "rama.client.js": "explorerExcludedFiles",
-    "ramacontroller.js": "explorerExcludedFiles"
+    "ramacontroller.js": "explorerExcludedFiles",
+    "dist/*": "explorerExcludedFiles"
   }
 }
