@@ -10,6 +10,9 @@ import { PrismaClient } from "@prisma/client";
 import { ControllerRequest } from "../interface/Interface.js";
 
 import { Response } from "express";
+import { io } from "../app.js";
+
+// const socket = io("http://localhost:5000");
 
 const prisma = new PrismaClient();
 
@@ -206,7 +209,14 @@ class ClientController {
 
     try {
       const notifications = await prisma.notification.findMany({
-        where: { compte_id: userId }, // Utilisation du champ correct `compte_id`
+        where: { compte_id: userId },
+        include: {
+          notifier: {
+            include: {
+              user: true,
+            },
+          },
+        },
       });
 
       return res.status(200).json({
@@ -251,7 +261,23 @@ class ClientController {
         },
       });
 
-      console.log(newMessage);
+      const messageForRefresh = await prisma.message.findUnique({
+        where: { id: newMessage.id },
+        include: {
+          messager: {
+            include: {
+              user: true,
+            },
+          },
+          messaged: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      });
+
+      io.emit("newMessage", messageForRefresh);
 
       res.status(201).json({ message: "Message envoyé", status: newMessage });
     } catch (error) {
@@ -262,6 +288,7 @@ class ClientController {
   }
 
   async getMesssage(req: ControllerRequest, res: Response): Promise<Response> {
+    const { id } = Number(req.id!);
     try {
       // Récupération de l'ID utilisateur à partir des paramètres de la requête
       const userId = Number(req.params.user_id);
@@ -273,10 +300,34 @@ class ClientController {
           .json({ message: "ID utilisateur invalide", status: "KO" });
       }
 
-      // Récupération des messages associés à cet utilisateur
       const messages = await prisma.message.findMany({
-        where: { messager_id: userId },
-        orderBy: { createdAt: "desc" },
+        where: {
+          OR: [
+            {
+              messager_id: id, // Connected user sent the message
+              messaged_id: userId, // Target user received the message
+            },
+            {
+              messager_id: userId, // Target user sent the message
+              messaged_id: id, // Connected user received the message
+            },
+          ],
+        },
+        include: {
+          messager: {
+            include: {
+              user: true,
+            },
+          },
+          messaged: {
+            include: {
+              user: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
       });
 
       // Vérification si l'utilisateur a des messages
@@ -971,6 +1022,30 @@ class ClientController {
         },
       });
 
+      const notification = await prisma.notification.create({
+        data: {
+          content: `Vous a suivi`,
+          compte_id: idFollowedCompte,
+          notifier_id: idCompte,
+          createdAt: new Date(),
+        },
+      });
+
+      const notificationResult = await prisma.notification.findUnique({
+        where: {
+          id: notification.id,
+        },
+        include: {
+          notifier: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      });
+
+      io.emit("newFollow", notificationResult);
+
       return res.json({
         message: "Vous avez suivi l'utilisateur",
         status: "OK",
@@ -1329,6 +1404,90 @@ class ClientController {
         message: "Erreur lors de la récupération des suggestions",
         status: "KO",
       });
+    }
+  }
+
+  async getDiscussionData(req: ControllerRequest, res: Response) {
+    try {
+      // On récupère l'utilisateur connecté à partir du token (supposé être stocké dans req.id)
+      const idCompte = parseInt(req.id as string, 10);
+
+      // Requête pour récupérer les détails du compte utilisateur
+      const userAccount = await prisma.compte.findUnique({
+        where: { id: idCompte }, // Récupérer le compte utilisateur
+        include: { user: true }, // Inclure les détails de l'utilisateur
+      });
+
+      // Vérifier si le compte utilisateur existe
+      if (!userAccount) {
+        return res
+          .status(404)
+          .json({ message: "Compte utilisateur non trouvé", status: "KO" });
+      }
+
+      // Requête pour récupérer les followers de l'utilisateur connecté (follower_id)
+      const followers = await prisma.follow.findMany({
+        where: { followed_id: idCompte }, // Filtrer par ceux qui suivent l'utilisateur connecté
+        include: {
+          follower: {
+            // Inclure les détails du follower (celui qui suit)
+            include: {
+              user: true, // Inclure les détails de l'utilisateur qui est le follower
+            },
+          },
+        },
+      });
+
+      // Vérifier si des followers existent
+      if (followers.length === 0) {
+        return res.json({
+          userAccount, // Détails du compte utilisateur
+          followers: [], // Liste vide des followers
+          message: "Aucun follower trouvé",
+          status: "OK",
+        });
+      }
+
+      const recentDiscussions = await prisma.message.findMany({
+        where: {
+          OR: [
+            { messager: { followers: { some: { followed_id: idCompte } } } },
+            { messaged: { followers: { some: { followed_id: idCompte } } } },
+          ],
+        },
+        include: {
+          messager: {
+            include: {
+              user: true,
+            },
+          },
+          messaged: {
+            include: {
+              user: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 10,
+      });
+
+      return res.json({
+        userAccount, // Détails du compte utilisateur
+        followers, // Liste des followers avec leurs détails
+        recentDiscussions,
+        message: "Followers récupérés avec succès",
+        status: "OK",
+      });
+    } catch (error) {
+      // Meilleure gestion des erreurs pour un retour d'information plus précis
+      if (error instanceof Error) {
+        return res.status(500).json({
+          message: "Erreur lors de la récupération des followers",
+          error: error.message,
+        });
+      }
     }
   }
 }

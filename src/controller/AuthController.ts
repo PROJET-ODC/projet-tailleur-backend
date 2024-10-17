@@ -227,6 +227,7 @@ class AuthController {
         .json({ message: "Erreur lors de l'inscription", status: "KO", error });
     }
   }
+  
 }
 
 export default new AuthController();

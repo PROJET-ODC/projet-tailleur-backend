@@ -23,9 +23,8 @@ router.route("/like").post(clientController.addLike);
 router.route("/dislike").post(clientController.addDislike);
 
 //send message
-router.route('/sendMessage').post(clientController.sendMessage);
-router.route('/messages/:user_id').get(clientController.getMesssage);
-
+router.route("/sendMessage").post(clientController.sendMessage);
+router.route("/messages/:user_id").get(clientController.getMesssage);
 
 router.route("/favorites").get(clientController.getAllFavorites);
 router.route("/favorites/add").post(clientController.addFavorite);
@@ -45,8 +44,9 @@ router
 // //route pour attribuer note a un compte
 router.route("/note").post(clientController.addNote);
 router.route("/follow").post(clientController.follow);
+router.route("/discussions").get(clientController.getDiscussionData);
 
-router.route('/followers').get(clientController.getAllFollowers) ;
+router.route("/followers").get(clientController.getAllFollowers);
 
 router.route("/bloquer").post(isAuthenticatedGlobal, clientController.bloquer);
 
