@@ -1144,7 +1144,6 @@ class ClientController {
   async getSomeProfile(req: ControllerRequest, res: Response) {
     const { identifiant } = req.params;
     const idCompte = Number(req.id); // Convert idCompte to a number
-
     if (isNaN(idCompte)) {
       return res
         .status(400)
@@ -1155,46 +1154,14 @@ class ClientController {
       // Fetch the Compte based on identifiant
       const compte = await prisma.compte.findUnique({
         where: { identifiant },
+        include: { user: true }, // Inclusion de la relation 'user' à la place de 'author'
       });
 
-      // Fetch the User associated with the Compte
-      const user = await prisma.user.findUnique({
-        where: { id: compte?.user_id }, // Corrected to user_id
+      return res.json({
+        compte,
+        message: "Donnée du profil recu",
+        status: "OK",
       });
-
-      // If the Compte's role is 'tailleur'
-      if (compte?.role === "tailleur") {
-        const tailleur = await prisma.tailleur.findUnique({
-          where: { compte_id: idCompte }, // Corrected to compte_id, now a number
-        });
-
-        // If any of the required entities are not found
-        if (!tailleur || !user || !compte) {
-          return res.status(404).json({
-            message: "Impossible de charger le profile demandé",
-            status: "KO",
-          });
-        }
-
-        // Return the Tailleur's profile
-        return res.json({ tailleur, user, compte, status: "OK" });
-      }
-
-      // If the Compte's role is not 'tailleur', assume it is a 'client'
-      const client = await prisma.client.findUnique({
-        where: { compte_id: idCompte }, // Corrected to compte_id, now a number
-      });
-
-      // If any of the required entities are not found
-      if (!client || !user || !compte) {
-        return res.status(404).json({
-          message: "Impossible de charger le profile demandé",
-          status: "KO",
-        });
-      }
-
-      // Return the Client's profile
-      return res.json({ client, user, compte, status: "OK" });
     } catch (err) {
       // Handle any errors that occur during the process
       return res
