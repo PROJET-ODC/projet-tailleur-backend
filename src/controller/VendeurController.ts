@@ -180,44 +180,136 @@ class VendeurController {
         return res.json({ message: "Les quantités des articles ont été mises à jour avec succès", status: "OK" });
     }
 
-    async myCommandes(req: ControllerRequest, res: Response) {
-        const id = parseInt(req.id!);
-        const vendeur = await prisma.vendeur.findUnique({
-            where: { compte_id: id }
-        });
 
-        if (!vendeur) {
-            return res.status(404).json({ message: 'Vendeur non trouvé', status: 'KO' });
-        }
+    // async myCommandes(req: ControllerRequest, res: Response) {
+    //     const id = parseInt(req.id!);
+    //     const vendeur = await prisma.vendeur.findUnique({
+    //         where: { compte_id: id }
+    //     });
 
+    //     if (!vendeur) {
+    //         return res.status(404).json({ message: 'Vendeur non trouvé', status: 'KO' });
+    //     }
+
+    //     try {
+    //         const commandes = await prisma.commandeArticle.findMany({
+    //             where: {
+    //                 detailcommandes: {
+    //                     some: {
+    //                         article: {
+    //                             vendeur_id: vendeur.id // Remplacez vendeurId par l'ID du vendeur spécifique
+    //                         }
+    //                     }
+    //                 }
+    //             },
+    //             include: {
+    //                 detailcommandes: {
+    //                     include: {
+    //                         article: true // Inclut les articles pour chaque détail de commande
+    //                     }
+    //                 }
+    //             }
+    //         });
+
+    //         return res.json({ commandes, message: "Les commandes sont récupérées avec succès", status: "OK" });
+
+    //     } catch (err) {
+    //         if (err instanceof Error) {
+    //             return res.json({ message: err.message, status: "KO" })
+    //         }
+    //     }
+    // }
+
+
+    async  myCommandes(req: ControllerRequest, res: Response) {
+        const userId = parseInt(req.id!); // ID de l'utilisateur connecté
+      
         try {
-            const commandes = await prisma.commandeArticle.findMany({
-                where: {
-                    detailcommandes: {
-                        some: {
-                            article: {
-                                vendeur_id: vendeur.id // Remplacez vendeurId par l'ID du vendeur spécifique
-                            }
-                        }
-                    }
-                },
-                include: {
-                    detailcommandes: {
-                        include: {
-                            article: true // Inclut les articles pour chaque détail de commande
-                        }
-                    }
-                }
-            });
-
-            return res.json({ commandes, message: "Les commandes sont récupérées avec succès", status: "OK" });
-
-        } catch (err) {
-            if (err instanceof Error) {
-                return res.json({ message: err.message, status: "KO" })
+          // On récupère le compte de l'utilisateur connecté
+          const compte = await prisma.compte.findUnique({
+            where: {
+              user_id: userId // Le compte est lié à l'utilisateur connecté
+            },
+            include: {
+              vendeur: true, // Inclure le vendeur si l'utilisateur est un vendeur
+              tailleur: true // Inclure le tailleur si l'utilisateur est un tailleur
             }
+          });
+      
+          if (!compte) {
+            return res.status(404).json({ message: 'Compte non trouvé', status: 'KO' });
+          }
+      
+          let articles;
+      
+          if (compte.vendeur) {
+            // Si l'utilisateur est un vendeur, on récupère les articles liés à ses commandes
+            articles = await prisma.detailCommandeArticle.findMany({
+              where: {
+                article: {
+                  vendeur_id: compte.vendeur.id // Filtrer par le vendeur lié au compte
+                }
+              },
+              include: {
+                article: {
+                  select: {
+                    libelle: true,
+                    image: true
+                  }
+                },
+                commande: {
+                  select: {
+                    numero: true,
+                    montantTotal: true
+                  }
+                }
+              }
+            });
+          } else if (compte.tailleur) {
+            // Si l'utilisateur est un tailleur, on récupère les articles de ses commandes
+            articles = await prisma.detailCommandeArticle.findMany({
+              where: {
+                commande: {
+                  tailleur_id: compte.tailleur.id // Filtrer par le tailleur lié au compte
+                }
+              },
+              include: {
+                article: {
+                  select: {
+                    libelle: true,
+                    image: true
+                  }
+                },
+                commande: {
+                  select: {
+                    numero: true,
+                    montantTotal: true
+                  }
+                }
+              }
+            });
+          } else {
+            return res.status(400).json({ message: 'Aucun rôle de vendeur ou tailleur trouvé pour cet utilisateur', status: 'KO' });
+          }
+      
+          const result = articles.map(detail => ({
+            libelle: detail.article.libelle,
+            image: detail.article.image,
+            qte: detail.qte,
+            numero: detail.commande.numero,
+            montantTotal: detail.commande.montantTotal
+          }));
+      
+          return res.json(result);
+        } catch (error) {
+          console.error(error);
+          return res.status(500).json({ message: 'Une erreur est survenue', status: 'KO' });
         }
-    }
+      }
+      
+    
+
+
     async validateCommandes(req: ControllerRequest, res: Response) {
 
     }
