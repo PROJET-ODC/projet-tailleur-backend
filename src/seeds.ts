@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -6,31 +6,31 @@ async function main() {
   // Création de quelques utilisateurs
   const user1 = await prisma.user.create({
     data: {
-      lastname: 'Doe',
-      firstname: 'John',
-      phone: '771234567',
-      city: 'Dakar',
+      lastname: "Doe",
+      firstname: "John",
+      phone: "771234567",
+      city: "Dakar",
     },
   });
 
   const user2 = await prisma.user.create({
     data: {
-      lastname: 'Smith',
-      firstname: 'Jane',
-      phone: '772345678',
-      city: 'Dakar',
+      lastname: "Smith",
+      firstname: "Jane",
+      phone: "772345678",
+      city: "Dakar",
     },
   });
 
   // Création des comptes associés aux utilisateurs
   const compte1 = await prisma.compte.create({
     data: {
-      email: 'john.doe@example.com',
-      password: 'password123',
-      role: 'USER',
-      etat: 'ACTIVE',
-      identifiant: 'john_doe',
-      bio: 'User bio',
+      email: "john.doe@example.com",
+      password: "$2b$12$wRBcuddac.LKstMEb3hhiuSO1h5ubuPL7YBNaWCW.fLA/1L2MNIqC",
+      role: "USER",
+      etat: "ACTIVE",
+      identifiant: "john_doe",
+      bio: "User bio",
       credit: 100,
       user_id: user1.id,
     },
@@ -38,17 +38,16 @@ async function main() {
 
   const compte2 = await prisma.compte.create({
     data: {
-      email: 'jane.smith@example.com',
-      password: 'password456',
-      role: 'ADMIN',
-      etat: 'ACTIVE',
-      identifiant: 'jane_smith',
-      bio: 'Admin bio',
+      email: "jane.smith@example.com",
+      password: "$2b$12$wRBcuddac.LKstMEb3hhiuSO1h5ubuPL7YBNaWCW.fLA/1L2MNIqC",
+      role: "ADMIN",
+      etat: "ACTIVE",
+      identifiant: "jane_smith",
+      bio: "Admin bio",
       credit: 200,
       user_id: user2.id,
     },
   });
-
 
   // Création de tailleurs
   const tailleur1 = await prisma.tailleur.create({
@@ -74,22 +73,22 @@ async function main() {
   // Création de posts
   const post1 = await prisma.post.create({
     data: {
-      content: 'First post content',
-      title: 'First Post',
+      content: "First post content",
+      title: "First Post",
       count: 1,
       shareNb: 0,
       viewNb: 10,
       tailleur_id: tailleur1.id,
-      status: 'PUBLIE',
-      categorie: 'IMAGE',
+      status: "PUBLIE",
+      categorie: "IMAGE",
     },
   });
 
-  console.log('Data seeding completed.');
+  console.log("Data seeding completed.");
 }
 
 main()
-  .catch(e => {
+  .catch((e) => {
     console.error(e);
     process.exit(1);
   })

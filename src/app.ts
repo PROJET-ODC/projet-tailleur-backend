@@ -63,22 +63,26 @@ app.use(
   swaggerUi.setup(swaggerDocument)
 );
 
-app.use(`${BASE_API}`, authRoutes);
-app.use(`${BASE_API}/client`, clientRoutes);
-app.use(`${BASE_API}/tailleur`, tailleurRoutes);
-app.use(`${BASE_API}/vendeur`, vendeurRoutes);
-app.use(`${BASE_API}/admin`, AdminRoutes);
-
 const server = http.createServer(app);
 
 // Initialize a new instance of Socket.IO by passing the HTTP server
-const io = new Server(server, {
+export const  io = new Server(server, {
   cors: {
     origin: "http://localhost:5173", // Allow requests from this origin and my frontend port = 5173
     methods: ["GET", "POST"], // Allow these HTTP methods
   },
 });
 
+
+
+app.use(`${BASE_API}`, authRoutes);
+app.use(`${BASE_API}/client`, clientRoutes);
+app.use(`${BASE_API}/tailleur`, tailleurRoutes);
+app.use(`${BASE_API}/vendeur`, vendeurRoutes);
+app.use(`${BASE_API}/admin`, AdminRoutes);
+
+
 server.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
 });
+
