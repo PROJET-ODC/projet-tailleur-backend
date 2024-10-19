@@ -131,8 +131,8 @@ class TailleurController {
         999
       );
 
-      const { content, title, useCredit, status, categorie } = req.body;
-
+      const { content, title, useCredit, status, categorie,price } = req.body;
+        const prix = Number(price);
       if (!content || typeof content !== "string") {
         return res.status(400).json({
           message: "Le contenu doit être une chaîne de caractères non vide",
@@ -224,6 +224,7 @@ class TailleurController {
           shareNb: 0,
           viewNb: 0,
           count: 2,
+          price:prix,
           tailleur_id: tailleur.id,
           categorie: req.body.categorie || null,
           status: req.body.status || "draft",
@@ -232,10 +233,41 @@ class TailleurController {
         },
       });
 
+      const posted = await prisma.post.findUnique({
+        where: { id: newPost.id },
+        include: {
+          comments: {
+            include: {
+              compte: {
+                include: {
+                  user: true, // Include user information related to your own compte
+                },
+              },
+            },
+          },
+          likes: true,
+          favoris: true,
+          tailleur: {
+            include: {
+              compte: {
+                include: {
+                  user: true,
+                },
+              },
+            },
+          },
+        },
+      })
       return res.status(201).json({
         message: "Post créé avec succès",
         status: "OK",
-        post: newPost,
+        post: {
+          ...posted,
+          user: {
+            firstname: posted.tailleur.compte.user.firstname,
+            lastname: posted.tailleur.compte.user.lastname,
+          },
+        },
       });
     } catch (error) {
       if (error instanceof Error) {
@@ -273,6 +305,7 @@ class TailleurController {
             },
           },
         },
+        orderBy: { createdAt: "desc" }, // Order by createdAt in descending order
       });
 
       return res.status(200).json({

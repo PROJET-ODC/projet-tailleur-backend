@@ -1490,6 +1490,26 @@ class ClientController {
       }
     }
   }
+
+  async getTaille(req:ControllerRequest, res:Response){
+
+    const taille = await prisma.taille.findMany();
+
+    if(!taille){
+      return res.status(404).json({
+        message: "Taille introuvable",
+        status: "KO"
+      });
+    }
+    
+    return res.status(200).json({
+
+      taille: taille,
+      message: "Taille récupérée avec succès",
+      status: "OK"
+    });
+
+  }
 }
 
 export default new ClientController();

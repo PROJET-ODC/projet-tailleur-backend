@@ -61,5 +61,6 @@ router.route("/accueil/search").post(clientController.accueilSearch);
 router.route("/auth-user").get(clientController.getAuthUser);
 
 router.route("/suggestion").get(clientController.getSuggestions);
+router.route("/taille").get(clientController.getTaille);
 
 export { router };
