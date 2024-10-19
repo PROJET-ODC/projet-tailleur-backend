@@ -10,6 +10,7 @@
     "dist/playground-22.mongodb.js": "explorerExcludedFiles",
     "rama.client.js": "explorerExcludedFiles",
     "ramacontroller.js": "explorerExcludedFiles",
-    "dist/*": "explorerExcludedFiles"
+    "dist/*": "explorerExcludedFiles",
+    "tmp/*": "explorerExcludedFiles"
   }
 }
