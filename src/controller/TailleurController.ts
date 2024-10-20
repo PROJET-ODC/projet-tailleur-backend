@@ -8,6 +8,7 @@ import { etatCommande } from "@prisma/client"; // Importez l'énumération
 import { Decimal } from "@prisma/client/runtime/library";
 import { uploadImageCloud, uploadImageLocal } from "../utils/uploadFile.js";
 import { UploadedFile } from "express-fileupload";
+import { log } from "console";
 
 const prisma = new PrismaClient();
 
@@ -330,6 +331,83 @@ class TailleurController {
     }
   }
 
+
+  async getPostsByCompteId(req: ControllerRequest, res: Response) {
+    try {
+      // Récupérer l'ID du compte à partir des paramètres de la requête
+      const compteId = parseInt(req.id!);
+      console.log(compteId);
+      
+      if (isNaN(compteId)) {
+        return res.status(400).json({
+          message: "ID de compte invalide",
+          status: "BAD_REQUEST",
+        });
+      }
+  
+      // Rechercher les posts liés à ce compte spécifique
+      const posts = await prisma.post.findMany({
+        where: {
+          tailleur: {
+            compte_id: compteId, // Filtrer les posts par le compte ID
+          },
+        },
+        include: {
+          comments: {
+            include: {
+              compte: {
+                include: {
+                  user: true, // Inclure les informations utilisateur liées à votre propre compte
+                },
+              },
+            },
+          },
+          likes: true,
+          favoris: true,
+          tailleur: {
+            include: {
+              compte: {
+                include: {
+                  user: true,
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" }, // Trier par date de création descendante
+      });
+  
+      if (posts.length === 0) {
+        return res.status(404).json({
+          message: "Aucun post trouvé pour ce compte",
+          status: "NOT_FOUND",
+        });
+      }
+  
+      return res.status(200).json({
+        message: "Posts récupérés avec succès",
+        status: "OK",
+        posts: posts.map((post) => ({
+          ...post,
+          user: {
+            firstname: post.tailleur.compte.user.firstname,
+            lastname: post.tailleur.compte.user.lastname,
+          },
+        })),
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error("Erreur lors de la récupération des posts:", error);
+        return res.status(500).json({
+          error: "Une erreur est survenue lors de la récupération des posts",
+          details: error.message,
+        });
+      }
+    }
+  }
+  
+  
+  
   async acheterCredit(req: ControllerRequest, res: Response) {
     try {
       let { montant } = req.body;
@@ -455,7 +533,7 @@ class TailleurController {
       const compte_id = parseInt(req.id!);
 
       const tailleur = await prisma.tailleur.findUnique({
-        where: { compte_id },
+        where: { compte_id:compte_id },
       });
 
       if (!tailleur) {
