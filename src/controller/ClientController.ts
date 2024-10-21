@@ -8,9 +8,9 @@ import {
 } from "@prisma/client";
 import { PrismaClient } from "@prisma/client";
 import { ControllerRequest } from "../interface/Interface.js";
-
 import { Response } from "express";
 import { io } from "../app.js";
+import { log } from "console";
 
 // const socket = io("http://localhost:5000");
 
@@ -371,7 +371,8 @@ class ClientController {
           },
         },
         orderBy: {
-          createdAt: "asc",
+          createdAt: "desc",
+
         },
       });
 
@@ -428,11 +429,29 @@ class ClientController {
     }
   }
 
-  async addFavorite(req: ControllerRequest, res: Response): Promise<Response> {
-    try {
-      const { post_id } = req.body;
-      const compte_id = Number(req.id);
+ async addFavorite(req: ControllerRequest, res: Response): Promise<Response> {
+  try {
+    const { post_id } = req.body;
+    const compte_id = Number(req.id);
 
+    // Vérifiez si le favori existe déjà
+    const existingFavorite = await prisma.favori.findFirst({
+      where: {
+        post_id: post_id,
+        compte_id: compte_id,
+      },
+    });
+
+    if (existingFavorite) {
+      // Si le favori existe, le supprimer
+      await prisma.favori.delete({
+        where: {
+          id: existingFavorite.id, // Supprimez par ID
+        },
+      });
+      return res.status(200).json({ message: "Favori supprimé", status: "OK" });
+    } else {
+      // Si le favori n'existe pas, l'ajouter
       const newFavorite = await prisma.favori.create({
         data: {
           post_id,
@@ -440,28 +459,35 @@ class ClientController {
           createdAt: new Date(),
         },
       });
-
       return res.status(201).json({ favorite: newFavorite, status: "OK" });
-    } catch (err: any) {
-      return res.status(500).json({ message: err.message, status: "KO" });
     }
+  } catch (err: any) {
+    return res.status(500).json({ message: err.message, status: "KO" });
   }
+}
+
 
   async getAllFavorites(
     req: ControllerRequest,
     res: Response
   ): Promise<Response> {
     try {
-      const id = req.id;
+      const id = parseInt(req.id!);
+      console.log(id);
+      
+      
+
 
       if (!id) {
         return res.status(400).json({ message: "ID utilisateur invalide" });
       }
 
-      const user = await prisma.compte.findUnique({
-        where: { id: Number() },
+      const user =await prisma.compte.findUnique({
+        where: { id:id },
       });
 
+      console.log(user);
+      
       if (!user) {
         return res.status(404).json({ message: "Utilisateur non trouvé" });
       }
@@ -485,11 +511,9 @@ class ClientController {
     res: Response
   ): Promise<Response> {
     try {
-      const { favorite_id } = req.body;
-      const compte_id = Number(req.id);
-      console.log(favorite_id);
+      const compte_id =  parseInt(req.id!);
 
-      if (!compte_id || !favorite_id) {
+      if (!compte_id  ) {
         return res
           .status(400)
           .json({ message: "ID du compte ou ID du favori invalide" });
@@ -497,8 +521,9 @@ class ClientController {
 
       const result = await prisma.favori.deleteMany({
         where: {
-          compte_id,
-          id: favorite_id,
+          
+          compte_id:compte_id,
+          
         },
       });
 
@@ -523,7 +548,7 @@ class ClientController {
   async signaler(req: ControllerRequest, res: Response): Promise<Response> {
     try {
       const { reporter_id, motif } = req.body;
-      const compte_id = Number(req.id);
+      const compte_id = parseInt(req.id!);
 
       if (!compte_id) {
         return res.status(400).json({ message: "ID utilisateur invalide" });
