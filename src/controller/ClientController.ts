@@ -288,7 +288,7 @@ class ClientController {
   }
 
   async getMesssage(req: ControllerRequest, res: Response): Promise<Response> {
-    const { id } = Number(req.id!);
+    const id = Number(req.id!);
     try {
       // Récupération de l'ID utilisateur à partir des paramètres de la requête
       const userId = Number(req.params.user_id);

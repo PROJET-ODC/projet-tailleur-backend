@@ -27,8 +27,8 @@ async function main() {
     data: {
       email: "john.doe@example.com",
       password: "$2b$12$wRBcuddac.LKstMEb3hhiuSO1h5ubuPL7YBNaWCW.fLA/1L2MNIqC",
-      role: "USER",
-      etat: "ACTIVE",
+      role: "tailleur",
+      etat: "active",
       identifiant: "john_doe",
       bio: "User bio",
       credit: 100,
@@ -40,8 +40,8 @@ async function main() {
     data: {
       email: "jane.smith@example.com",
       password: "$2b$12$wRBcuddac.LKstMEb3hhiuSO1h5ubuPL7YBNaWCW.fLA/1L2MNIqC",
-      role: "ADMIN",
-      etat: "ACTIVE",
+      role: "client",
+      etat: "active",
       identifiant: "jane_smith",
       bio: "Admin bio",
       credit: 200,

@@ -31,17 +31,18 @@ class AuthController {
   async login(req: ControllerRequest, res: Response) {
     try {
       const { email, password } = req.body;
-
+     
       /**
        * Faire ici la validation des champs
        **/
       const compte = await prisma.compte.findUnique({
         where: { email },
       });
-
+      
       const user = await prisma.user.findUnique({
         where: { id: compte?.user_id },
       });
+
 
       if (!compte) {
         return res
@@ -70,6 +71,7 @@ class AuthController {
         email: compte.email,
         identifiant: compte.identifiant,
         role: compte.role,
+        credit:compte.credit,
         picture: user?.picture,
       });
 
@@ -227,7 +229,7 @@ class AuthController {
         .json({ message: "Erreur lors de l'inscription", status: "KO", error });
     }
   }
-  
+
 }
 
 export default new AuthController();

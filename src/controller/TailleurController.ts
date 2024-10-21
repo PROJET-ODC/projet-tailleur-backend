@@ -2,12 +2,13 @@ import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 
 import { PrismaClient } from "@prisma/client";
-import { Response } from "express";
+import { Response, Request } from "express";
 import { ControllerRequest } from "../interface/Interface";
 import { etatCommande } from "@prisma/client"; // Importez l'énumération
 import { Decimal } from "@prisma/client/runtime/library";
 import { uploadImageCloud, uploadImageLocal } from "../utils/uploadFile.js";
 import { UploadedFile } from "express-fileupload";
+
 
 const prisma = new PrismaClient();
 
@@ -258,17 +259,21 @@ class TailleurController {
           },
         },
       })
-      return res.status(201).json({
-        message: "Post créé avec succès",
-        status: "OK",
-        post: {
-          ...posted,
-          user: {
-            firstname: posted.tailleur.compte.user.firstname,
-            lastname: posted.tailleur.compte.user.lastname,
+      if (posted) {
+        return res.status(201).json({
+          message: "Post créé avec succès",
+          status: "OK",
+          post: {
+            ...posted,
+            user: {
+              firstname: posted.tailleur.compte.user.firstname,
+              lastname: posted.tailleur.compte.user.lastname,
+            },
           },
-        },
-      });
+        });
+      } else {
+        return res.status(404).json({ message: "Post introuvable", status: "KO" });
+      }      
     } catch (error) {
       if (error instanceof Error) {
         console.error("Erreur lors de la création du post:", error);
@@ -650,22 +655,57 @@ class TailleurController {
     }
   }
 
+
   async getAllArticles(req: Request, res: Response): Promise<void> {
     try {
       const articles = await prisma.article.findMany({
         include: {
-          article_unite: true,
+          categorie: true,
+          vendeur: {
+            include: {
+              compte:{
+                include: {
+                  user: true,
+                }
+              } 
+            },
+          },
+          article_unite: {
+            include: {
+              unite: true, // Inclure les informations de l'unité 
+            },
+          },
           couleur_article: true,
           stock: true,
         },
       });
-
-      res.json(articles);
+  
+      if (!articles || articles.length === 0) {
+        res.status(404).json({
+          message: "Aucun article trouvé",
+          status: "KO",
+        });
+        return;
+      }
+  
+      res.status(200).json({
+        message: "Articles récupérés avec succès",
+        status: "OK",
+        data: articles,
+      });
     } catch (error) {
       console.error("Erreur lors de la récupération des articles:", error);
-      res.status(500).json({ error: "Erreur serveur" });
+      res.status(500).json({
+        message: "Une erreur est survenue lors de la récupération des articles",
+        details: error instanceof Error ? error.message : "Erreur serveur",
+        status: "KO",
+      });
     }
   }
+  
+  
+
+
   async getAllApprovisions(
     req: ControllerRequest,
     res: Response
