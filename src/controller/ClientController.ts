@@ -26,7 +26,7 @@ class ClientController {
     }
   }
 
-  async getAuthUser(req: ControllerRequest, res: Response) { }
+  async getAuthUser(req: ControllerRequest, res: Response) {}
 
   // Ajouter un like
   async addLike(req: ControllerRequest, res: Response) {
@@ -35,7 +35,9 @@ class ClientController {
       const compteId = parseInt(req.body.compte_id);
 
       if (isNaN(postId) || isNaN(compteId)) {
-        return res.status(400).json({ message: "ID de post ou de compte invalide", status: "KO" });
+        return res
+          .status(400)
+          .json({ message: "ID de post ou de compte invalide", status: "KO" });
       }
 
       const existingLike = await prisma.like.findFirst({
@@ -45,8 +47,12 @@ class ClientController {
       if (existingLike) {
         if (existingLike.etat === "LIKE") {
           await prisma.like.delete({ where: { id: existingLike.id } });
-          console.log(`Like supprimé par l'utilisateur ${compteId} pour le post ${postId}`);
-          return res.status(200).json({ message: "Like supprimé avec succès", status: "OK" });
+          console.log(
+            `Like supprimé par l'utilisateur ${compteId} pour le post ${postId}`
+          );
+          return res
+            .status(200)
+            .json({ message: "Like supprimé avec succès", status: "OK" });
         } else if (existingLike.etat === "DISLIKE") {
           const updatedLike = await prisma.like.update({
             where: { id: existingLike.id },
@@ -73,10 +79,12 @@ class ClientController {
               },
             },
           });
-  
+
           io.emit("newFollow", notificationResult);
 
-          console.log(`État changé de dislike à like par l'utilisateur ${compteId} pour le post ${postId}`);
+          console.log(
+            `État changé de dislike à like par l'utilisateur ${compteId} pour le post ${postId}`
+          );
 
           return res.status(200).json({
             message: "État changé de dislike à like",
@@ -118,7 +126,9 @@ class ClientController {
 
         io.emit("newFollow", notificationResult);
 
-        console.log(`Nouveau like ajouté par l'utilisateur ${compteId} pour le post ${postId}`);
+        console.log(
+          `Nouveau like ajouté par l'utilisateur ${compteId} pour le post ${postId}`
+        );
 
         return res.status(201).json({
           message: "Like ajouté avec succès",
@@ -128,11 +138,12 @@ class ClientController {
       }
     } catch (err) {
       console.error(err);
-      return res.status(500).json({ message: err instanceof Error ? err.message : "Erreur inconnue", status: "KO" });
+      return res.status(500).json({
+        message: err instanceof Error ? err.message : "Erreur inconnue",
+        status: "KO",
+      });
     }
   }
-
-
 
   async getAllFollowers(req: ControllerRequest, res: Response) {
     try {
@@ -372,7 +383,6 @@ class ClientController {
         },
         orderBy: {
           createdAt: "desc",
-
         },
       });
 
@@ -429,43 +439,44 @@ class ClientController {
     }
   }
 
- async addFavorite(req: ControllerRequest, res: Response): Promise<Response> {
-  try {
-    const { post_id } = req.body;
-    const compte_id = Number(req.id);
+  async addFavorite(req: ControllerRequest, res: Response): Promise<Response> {
+    try {
+      const { post_id } = req.body;
+      const compte_id = Number(req.id);
 
-    // Vérifiez si le favori existe déjà
-    const existingFavorite = await prisma.favori.findFirst({
-      where: {
-        post_id: post_id,
-        compte_id: compte_id,
-      },
-    });
-
-    if (existingFavorite) {
-      // Si le favori existe, le supprimer
-      await prisma.favori.delete({
+      // Vérifiez si le favori existe déjà
+      const existingFavorite = await prisma.favori.findFirst({
         where: {
-          id: existingFavorite.id, // Supprimez par ID
+          post_id: post_id,
+          compte_id: compte_id,
         },
       });
-      return res.status(200).json({ message: "Favori supprimé", status: "OK" });
-    } else {
-      // Si le favori n'existe pas, l'ajouter
-      const newFavorite = await prisma.favori.create({
-        data: {
-          post_id,
-          compte_id,
-          createdAt: new Date(),
-        },
-      });
-      return res.status(201).json({ favorite: newFavorite, status: "OK" });
-    }
-  } catch (err: any) {
-    return res.status(500).json({ message: err.message, status: "KO" });
-  }
-}
 
+      if (existingFavorite) {
+        // Si le favori existe, le supprimer
+        await prisma.favori.delete({
+          where: {
+            id: existingFavorite.id, // Supprimez par ID
+          },
+        });
+        return res
+          .status(200)
+          .json({ message: "Favori supprimé", status: "OK" });
+      } else {
+        // Si le favori n'existe pas, l'ajouter
+        const newFavorite = await prisma.favori.create({
+          data: {
+            post_id,
+            compte_id,
+            createdAt: new Date(),
+          },
+        });
+        return res.status(201).json({ favorite: newFavorite, status: "OK" });
+      }
+    } catch (err: any) {
+      return res.status(500).json({ message: err.message, status: "KO" });
+    }
+  }
 
   async getAllFavorites(
     req: ControllerRequest,
@@ -474,20 +485,17 @@ class ClientController {
     try {
       const id = parseInt(req.id!);
       console.log(id);
-      
-      
-
 
       if (!id) {
         return res.status(400).json({ message: "ID utilisateur invalide" });
       }
 
-      const user =await prisma.compte.findUnique({
-        where: { id:id },
+      const user = await prisma.compte.findUnique({
+        where: { id: id },
       });
 
       console.log(user);
-      
+
       if (!user) {
         return res.status(404).json({ message: "Utilisateur non trouvé" });
       }
@@ -511,9 +519,9 @@ class ClientController {
     res: Response
   ): Promise<Response> {
     try {
-      const compte_id =  parseInt(req.id!);
+      const compte_id = parseInt(req.id!);
 
-      if (!compte_id  ) {
+      if (!compte_id) {
         return res
           .status(400)
           .json({ message: "ID du compte ou ID du favori invalide" });
@@ -521,9 +529,7 @@ class ClientController {
 
       const result = await prisma.favori.deleteMany({
         where: {
-          
-          compte_id:compte_id,
-          
+          compte_id: compte_id,
         },
       });
 
@@ -652,12 +658,12 @@ class ClientController {
       });
     } catch (err) {
       console.error(err);
-      return res.status(500).json({ message: err instanceof Error ? err.message : "Erreur inconnue", status: "KO" });
+      return res.status(500).json({
+        message: err instanceof Error ? err.message : "Erreur inconnue",
+        status: "KO",
+      });
     }
-}
-
-
-
+  }
 
   async reponseComment(
     req: ControllerRequest,
@@ -1142,15 +1148,13 @@ class ClientController {
       });
     } catch (error) {
       if (error instanceof Error) {
-        return res
-          .status(500)
-          .json({ message: "Erreur lors de la suppression du suivi", error: error.message });
+        return res.status(500).json({
+          message: "Erreur lors de la suppression du suivi",
+          error: error.message,
+        });
       }
     }
   }
-
-
-
 
   async follow(req: ControllerRequest, res: Response) {
     try {
@@ -1165,7 +1169,10 @@ class ClientController {
 
       // Vérifier si l'utilisateur tente de suivre son propre compte
       if (idCompte === idFollowedCompte) {
-        return res.status(400).json({ message: "Vous ne pouvez pas suivre votre propre compte", status: "KO" });
+        return res.status(400).json({
+          message: "Vous ne pouvez pas suivre votre propre compte",
+          status: "KO",
+        });
       }
 
       // Vérifier si l'utilisateur suit déjà ce compte
@@ -1179,7 +1186,9 @@ class ClientController {
       });
 
       if (existingFollow) {
-        return res.status(400).json({ message: "Vous suivez déjà ce compte", status: "KO" });
+        return res
+          .status(400)
+          .json({ message: "Vous suivez déjà ce compte", status: "KO" });
       }
 
       // Créer une nouvelle relation de suivi
@@ -1192,7 +1201,9 @@ class ClientController {
       });
 
       if (!follow) {
-        return res.status(500).json({ message: "Le follow a échoué", status: "KO" });
+        return res
+          .status(500)
+          .json({ message: "Le follow a échoué", status: "KO" });
       }
 
       // Mettre à jour le compte suivi
@@ -1247,38 +1258,40 @@ class ClientController {
       });
     } catch (error) {
       if (error instanceof Error) {
-        return res
-          .status(500)
-          .json({ message: "Erreur lors de l'ajout du suivi", error: error.message });
+        return res.status(500).json({
+          message: "Erreur lors de l'ajout du suivi",
+          error: error.message,
+        });
       }
     }
   }
-
 
   async addNote(req: ControllerRequest, res: Response) {
     try {
       // Récupérer l'ID de l'utilisateur connecté à partir de req.id (déjà authentifié via middleware)
       const noter_id = Number(req.id);
-  
+
       // Récupérer les données de la requête
       const { noted_id, note } = req.body;
-  
+
       // Vérifier que le tailleur (noted_id) existe
       const tailleurExists = await prisma.tailleur.findUnique({
         where: {
           id: Number(noted_id),
         },
       });
-  
+
       if (!tailleurExists) {
         return res.status(404).json({ message: "Le tailleur n'existe pas." });
       }
-  
+
       // Vérifier que la note est valide (par exemple, entre 1 et 5)
       if (note < 1 || note > 5) {
-        return res.status(400).json({ message: "La note doit être comprise entre 1 et 5." });
+        return res
+          .status(400)
+          .json({ message: "La note doit être comprise entre 1 et 5." });
       }
-  
+
       // Ajouter la note dans la base de données
       const newNote = await prisma.note.create({
         data: {
@@ -1287,7 +1300,7 @@ class ClientController {
           note: note, // La valeur de la note
         },
       });
-  
+
       // Réponse de succès
       return res.status(201).json({
         message: "Note ajoutée avec succès.",
@@ -1299,7 +1312,7 @@ class ClientController {
       }
     }
   }
-  
+
   async userProfile(req: ControllerRequest, res: Response) {
     try {
       const id = parseInt(req.id!);
@@ -1451,18 +1464,22 @@ class ClientController {
         where: {
           OR: [
             { identifiant: identifiant },
-            { id: isNaN(Number(identifiant)) ? undefined : Number(identifiant) }
-          ]
+            {
+              id: isNaN(Number(identifiant)) ? undefined : Number(identifiant),
+            },
+          ],
         },
         include: {
           user: true,
           tailleur: true,
-          client: true
+          client: true,
         },
       });
 
       if (!targetCompte) {
-        return res.status(404).json({ message: "Profil non trouvé", status: "KO" });
+        return res
+          .status(404)
+          .json({ message: "Profil non trouvé", status: "KO" });
       }
 
       // Check if the connected user follows the target user
@@ -1470,8 +1487,8 @@ class ClientController {
         where: {
           follower_id: connectedUserId,
           followed_id: targetCompte.id,
-          status: "FOLLOWED"
-        }
+          status: "FOLLOWED",
+        },
       });
 
       const isFollowing = !!follow;
@@ -1480,7 +1497,10 @@ class ClientController {
       if (targetCompte.role === "tailleur") {
         const posts = await prisma.post.findMany({
           where: {
-            AND: [{ tailleur_id: targetCompte.tailleur?.id }, { status: "PUBLIE" }],
+            AND: [
+              { tailleur_id: targetCompte.tailleur?.id },
+              { status: "PUBLIE" },
+            ],
           },
         });
 
@@ -1493,7 +1513,10 @@ class ClientController {
           },
         });
 
-        const totalDesNotes = notes.reduce((somme, note) => somme + parseFloat(note.note), 0);
+        const totalDesNotes = notes.reduce(
+          (somme, note) => somme + parseFloat(note.note),
+          0
+        );
         const noteToShow = notes.length > 0 ? totalDesNotes / notes.length : 0;
 
         const followeds = await prisma.follow.count({
@@ -1532,7 +1555,6 @@ class ClientController {
         .json({ message: "Erreur interne du serveur", status: "KO" });
     }
   }
-
 
   async bloquer(req: ControllerRequest, res: Response) {
     try {
@@ -1646,6 +1668,9 @@ class ClientController {
               id: {
                 not: idCompte, // Exclure le compte connecté lui-même
               },
+            },
+            {
+              role: "tailleur",
             },
           ],
         },
@@ -1780,7 +1805,7 @@ class ClientController {
     }
   }
 
-  // add paiement commande 
+  // add paiement commande
   async addPaiementCommande(req: ControllerRequest, res: Response) {
     const { post_id, qte, taille, montant } = req.body;
     const compte_id = req.id; // ou req.user.id, selon votre implémentation d'authentification
@@ -1789,7 +1814,7 @@ class ClientController {
     if (!compte_id) {
       return res.status(400).json({
         message: "Utilisateur non authentifié, compte_id manquant",
-        status: "KO"
+        status: "KO",
       });
     }
 
@@ -1801,24 +1826,24 @@ class ClientController {
             post: { connect: { id: parseInt(post_id) } }, // Lier le produit à la commande
             qte: parseInt(qte),
             taille,
-            compte: { connect: { id: parseInt(compte_id) } } // Lier l'utilisateur connecté
-          }
+            compte: { connect: { id: parseInt(compte_id) } }, // Lier l'utilisateur connecté
+          },
         });
 
         // Créer le paiement pour la commande nouvellement créée
         const paiement = await prisma.paiement.create({
           data: {
             montant: parseFloat(montant),
-            commande: { connect: { id: nouvelleCommande.id } } // Lier le paiement à la commande créée
-          }
+            commande: { connect: { id: nouvelleCommande.id } }, // Lier le paiement à la commande créée
+          },
         });
 
         // Mettre à jour la commande avec le paiement
         const updatedCommande = await prisma.commande.update({
           where: { id: nouvelleCommande.id },
           data: {
-            paiement: { connect: { id: paiement.id } }
-          }
+            paiement: { connect: { id: paiement.id } },
+          },
         });
 
         return { paiement, commande: updatedCommande };
@@ -1827,20 +1852,24 @@ class ClientController {
       return res.status(200).json({
         message: "Commande et paiement ajoutés avec succès",
         status: "OK",
-        data: result
+        data: result,
       });
     } catch (error) {
-      console.error("Erreur lors de l'ajout de la commande ou du paiement:", error);
+      console.error(
+        "Erreur lors de l'ajout de la commande ou du paiement:",
+        error
+      );
       return res.status(400).json({
-        message: error instanceof Error ? error.message : "Une erreur est survenue lors de l'ajout de la commande ou du paiement",
-        status: "KO"
+        message:
+          error instanceof Error
+            ? error.message
+            : "Une erreur est survenue lors de l'ajout de la commande ou du paiement",
+        status: "KO",
       });
     }
   }
 
-
   async getTaille(req: ControllerRequest, res: Response) {
-
     const taille = await prisma.taille.findMany();
 
     if (!taille) {
@@ -1932,42 +1961,53 @@ class ClientController {
 
   async getAllPost(req: ControllerRequest, res: Response) {
     try {
-      // Récupérer tous les posts associés à ce tailleur
       const posts = await prisma.post.findMany({
         include: {
-          comments: true, // Par exemple, inclure les commentaires associés aux posts
+          comments: {
+            include: {
+              compte: {
+                include: {
+                  user: true, // Include user information related to your own compte
+                },
+              },
+            },
+          },
+          likes: true,
+          favoris: true,
+          tailleur: {
+            include: {
+              compte: {
+                include: {
+                  user: true,
+                },
+              },
+            },
+          },
         },
+        orderBy: { createdAt: "desc" }, // Order by createdAt in descending order
       });
 
-      // Vérifier s'il y a des posts
-      if (posts.length === 0) {
-        return res.json({
-          posts: [],
-          message: "Aucun post trouvé pour ce tailleur",
-          status: "OK",
-        });
-      }
-
-      return res.json({
-        posts,
-        message: "Posts récupérés avec succès",
+      return res.status(200).json({
+        message: "Posts retrieved successfully",
         status: "OK",
+        posts: posts.map((post) => ({
+          ...post,
+          user: {
+            firstname: post.tailleur.compte.user.firstname,
+            lastname: post.tailleur.compte.user.lastname,
+          },
+        })),
       });
     } catch (error) {
-      // Gestion des erreurs
       if (error instanceof Error) {
+        console.error("Erreur lors de la récupération des posts:", error);
         return res.status(500).json({
-          message: "Erreur lors de la récupération des posts",
-          error: error.message,
+          error: "Une erreur est survenue lors de la récupération des posts",
+          details: error.message,
         });
       }
     }
   }
 }
-
-
-
-
-
 
 export default new ClientController();
