@@ -89,7 +89,7 @@ class TailleurController {
           status: "KO",
         });
       }
-
+//salu
       // Supprimer le statut
       await prisma.status.delete({
         where: { id: status_id },
