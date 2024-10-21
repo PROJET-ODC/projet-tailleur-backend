@@ -62,5 +62,9 @@ router.route("/auth-user").get(clientController.getAuthUser);
 
 router.route("/suggestion").get(clientController.getSuggestions);
 router.route("/taille").get(clientController.getTaille);
+router.route("/statuslikes").post(clientController.updateStatusLikes);
+router.route("/statuslikes/:status_id").get(clientController.getAllStatusLikes);
+
+router.route("/posts").get(clientController.getAllPost);
 
 export { router };
