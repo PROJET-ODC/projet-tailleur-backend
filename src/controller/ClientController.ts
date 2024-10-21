@@ -8,9 +8,9 @@ import {
 } from "@prisma/client";
 import { PrismaClient } from "@prisma/client";
 import { ControllerRequest } from "../interface/Interface.js";
-
 import { Response } from "express";
 import { io } from "../app.js";
+import { log } from "console";
 
 // const socket = io("http://localhost:5000");
 
@@ -26,37 +26,57 @@ class ClientController {
     }
   }
 
-  async getAuthUser(req: ControllerRequest, res: Response) {}
+  async getAuthUser(req: ControllerRequest, res: Response) { }
 
-  // Ajouter un like$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+  // Ajouter un like
   async addLike(req: ControllerRequest, res: Response) {
     try {
       const postId = parseInt(req.body.post_id);
       const compteId = parseInt(req.body.compte_id);
-      console.log(compteId);
 
-      // Vérifie si un like/dislike existe déjà pour ce post et ce compte
+      if (isNaN(postId) || isNaN(compteId)) {
+        return res.status(400).json({ message: "ID de post ou de compte invalide", status: "KO" });
+      }
+
       const existingLike = await prisma.like.findFirst({
         where: { post_id: postId, compte_id: compteId },
       });
 
       if (existingLike) {
         if (existingLike.etat === "LIKE") {
-          // Si l'état est LIKE, supprimer le like
-          await prisma.like.delete({
-            where: { id: existingLike.id },
-          });
-
-          return res.status(200).json({
-            message: "Like supprimé avec succès",
-            status: "OK",
-          });
+          await prisma.like.delete({ where: { id: existingLike.id } });
+          console.log(`Like supprimé par l'utilisateur ${compteId} pour le post ${postId}`);
+          return res.status(200).json({ message: "Like supprimé avec succès", status: "OK" });
         } else if (existingLike.etat === "DISLIKE") {
-          // Si l'état est DISLIKE, le mettre à jour en LIKE
           const updatedLike = await prisma.like.update({
             where: { id: existingLike.id },
             data: { etat: "LIKE", updatedAt: new Date() },
           });
+
+          const notification = await prisma.notification.create({
+            data: {
+              content: "a aimé votre post",
+              compte_id: postId,
+              notifier_id: compteId,
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+          });
+
+          const notificationResult = await prisma.notification.findUnique({
+            where: { id: notification.id },
+            include: {
+              notifier: {
+                include: {
+                  user: true,
+                },
+              },
+            },
+          });
+  
+          io.emit("newFollow", notificationResult);
+
+          console.log(`État changé de dislike à like par l'utilisateur ${compteId} pour le post ${postId}`);
 
           return res.status(200).json({
             message: "État changé de dislike à like",
@@ -65,7 +85,6 @@ class ClientController {
           });
         }
       } else {
-        // Crée un nouveau like si aucun n'existe
         const newLike = await prisma.like.create({
           data: {
             post_id: postId,
@@ -76,6 +95,31 @@ class ClientController {
           },
         });
 
+        const notification = await prisma.notification.create({
+          data: {
+            content: "a aimé votre post",
+            compte_id: postId,
+            notifier_id: compteId,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        });
+
+        const notificationResult = await prisma.notification.findUnique({
+          where: { id: notification.id },
+          include: {
+            notifier: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        });
+
+        io.emit("newFollow", notificationResult);
+
+        console.log(`Nouveau like ajouté par l'utilisateur ${compteId} pour le post ${postId}`);
+
         return res.status(201).json({
           message: "Like ajouté avec succès",
           data: newLike,
@@ -83,11 +127,12 @@ class ClientController {
         });
       }
     } catch (err) {
-      if (err instanceof Error) {
-        return res.status(500).json({ message: err.message, status: "KO" });
-      }
+      console.error(err);
+      return res.status(500).json({ message: err instanceof Error ? err.message : "Erreur inconnue", status: "KO" });
     }
   }
+
+
 
   async getAllFollowers(req: ControllerRequest, res: Response) {
     try {
@@ -326,7 +371,8 @@ class ClientController {
           },
         },
         orderBy: {
-          createdAt: "asc",
+          createdAt: "desc",
+
         },
       });
 
@@ -383,11 +429,29 @@ class ClientController {
     }
   }
 
-  async addFavorite(req: ControllerRequest, res: Response): Promise<Response> {
-    try {
-      const { post_id } = req.body;
-      const compte_id = Number(req.id);
+ async addFavorite(req: ControllerRequest, res: Response): Promise<Response> {
+  try {
+    const { post_id } = req.body;
+    const compte_id = Number(req.id);
 
+    // Vérifiez si le favori existe déjà
+    const existingFavorite = await prisma.favori.findFirst({
+      where: {
+        post_id: post_id,
+        compte_id: compte_id,
+      },
+    });
+
+    if (existingFavorite) {
+      // Si le favori existe, le supprimer
+      await prisma.favori.delete({
+        where: {
+          id: existingFavorite.id, // Supprimez par ID
+        },
+      });
+      return res.status(200).json({ message: "Favori supprimé", status: "OK" });
+    } else {
+      // Si le favori n'existe pas, l'ajouter
       const newFavorite = await prisma.favori.create({
         data: {
           post_id,
@@ -395,28 +459,35 @@ class ClientController {
           createdAt: new Date(),
         },
       });
-
       return res.status(201).json({ favorite: newFavorite, status: "OK" });
-    } catch (err: any) {
-      return res.status(500).json({ message: err.message, status: "KO" });
     }
+  } catch (err: any) {
+    return res.status(500).json({ message: err.message, status: "KO" });
   }
+}
+
 
   async getAllFavorites(
     req: ControllerRequest,
     res: Response
   ): Promise<Response> {
     try {
-      const id = req.id;
+      const id = parseInt(req.id!);
+      console.log(id);
+      
+      
+
 
       if (!id) {
         return res.status(400).json({ message: "ID utilisateur invalide" });
       }
 
-      const user = await prisma.compte.findUnique({
-        where: { id: Number() },
+      const user =await prisma.compte.findUnique({
+        where: { id:id },
       });
 
+      console.log(user);
+      
       if (!user) {
         return res.status(404).json({ message: "Utilisateur non trouvé" });
       }
@@ -440,11 +511,9 @@ class ClientController {
     res: Response
   ): Promise<Response> {
     try {
-      const { favorite_id } = req.body;
-      const compte_id = Number(req.id);
-      console.log(favorite_id);
+      const compte_id =  parseInt(req.id!);
 
-      if (!compte_id || !favorite_id) {
+      if (!compte_id  ) {
         return res
           .status(400)
           .json({ message: "ID du compte ou ID du favori invalide" });
@@ -452,8 +521,9 @@ class ClientController {
 
       const result = await prisma.favori.deleteMany({
         where: {
-          compte_id,
-          id: favorite_id,
+          
+          compte_id:compte_id,
+          
         },
       });
 
@@ -478,7 +548,7 @@ class ClientController {
   async signaler(req: ControllerRequest, res: Response): Promise<Response> {
     try {
       const { reporter_id, motif } = req.body;
-      const compte_id = Number(req.id);
+      const compte_id = parseInt(req.id!);
 
       if (!compte_id) {
         return res.status(400).json({ message: "ID utilisateur invalide" });
@@ -550,15 +620,44 @@ class ClientController {
           .json({ message: "Post non trouvé", status: "KO" });
       }
 
+      // Créer une notification pour le propriétaire du post
+      const notification = await prisma.notification.create({
+        data: {
+          content: "a commenté votre post",
+          compte_id: post_id, // ID du compte qui reçoit la notification
+          notifier_id: idCompte, // ID de l'utilisateur qui effectue l'action
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
+
+      // Récupérer les détails de la notification et émettre un événement pour informer le propriétaire du post
+      const notificationResult = await prisma.notification.findUnique({
+        where: { id: notification.id },
+        include: {
+          notifier: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      });
+
+      io.emit("newFollow", notificationResult);
+
       return res.json({
         comment: newComment,
         message: "Commentaire ajouté",
         status: "OK",
       });
-    } catch (error: any) {
-      return res.status(500).json({ message: "Erreur serveur", status: "KO" });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ message: err instanceof Error ? err.message : "Erreur inconnue", status: "KO" });
     }
-  }
+}
+
+
+
 
   async reponseComment(
     req: ControllerRequest,
@@ -974,6 +1073,67 @@ class ClientController {
     }
   }
 
+  async unfollow(req: ControllerRequest, res: Response) {
+    try {
+      const { idFollowedCompte } = req.body;
+      const idCompte = req.id ? parseInt(req.id, 10) : undefined;
+
+      if (idCompte === undefined) {
+        return res
+          .status(400)
+          .json({ message: "ID de compte invalide", status: "KO" });
+      }
+
+      // Vérifier si la relation de suivi existe
+      const follow = await prisma.follow.findUnique({
+        where: {
+          follower_id_followed_id: {
+            follower_id: idCompte,
+            followed_id: idFollowedCompte,
+          },
+        },
+      });
+
+      // Si la relation de suivi n'existe pas, renvoyer une erreur 404
+      if (!follow) {
+        return res
+          .status(404)
+          .json({ message: "Relation de suivi non trouvée", status: "KO" });
+      }
+
+      // Supprimer la relation de suivi
+      await prisma.follow.delete({
+        where: {
+          id: follow.id,
+        },
+      });
+
+      // Créer une notification pour l'unfollow (optionnel)
+      await prisma.notification.create({
+        data: {
+          content: `Vous a unfollow`,
+          compte_id: idFollowedCompte,
+          notifier_id: idCompte,
+          createdAt: new Date(),
+        },
+      });
+
+      return res.json({
+        message: "Vous avez unfollow l'utilisateur",
+        status: "OK",
+      });
+    } catch (error) {
+      if (error instanceof Error) {
+        return res
+          .status(500)
+          .json({ message: "Erreur lors de la suppression du suivi", error: error.message });
+      }
+    }
+  }
+
+
+
+
   async follow(req: ControllerRequest, res: Response) {
     try {
       const { idFollowedCompte } = req.body;
@@ -985,22 +1145,39 @@ class ClientController {
           .json({ message: "ID de compte invalide", status: "KO" });
       }
 
-      // Create a new follow relationship
+      // Vérifier si l'utilisateur tente de suivre son propre compte
+      if (idCompte === idFollowedCompte) {
+        return res.status(400).json({ message: "Vous ne pouvez pas suivre votre propre compte", status: "KO" });
+      }
+
+      // Vérifier si l'utilisateur suit déjà ce compte
+      const existingFollow = await prisma.follow.findUnique({
+        where: {
+          follower_id_followed_id: {
+            follower_id: idCompte,
+            followed_id: idFollowedCompte,
+          },
+        },
+      });
+
+      if (existingFollow) {
+        return res.status(400).json({ message: "Vous suivez déjà ce compte", status: "KO" });
+      }
+
+      // Créer une nouvelle relation de suivi
       const follow = await prisma.follow.create({
         data: {
           followed_id: idFollowedCompte,
           follower_id: idCompte,
-          status: "FOLLOWED", // Ajout du champ status requis
+          status: "FOLLOWED",
         },
       });
 
       if (!follow) {
-        return res
-          .status(500)
-          .json({ message: "Le follow a échoué", status: "KO" });
+        return res.status(500).json({ message: "Le follow a échoué", status: "KO" });
       }
 
-      // Update the followed account
+      // Mettre à jour le compte suivi
       await prisma.compte.update({
         where: { id: idFollowedCompte },
         data: {
@@ -1011,7 +1188,7 @@ class ClientController {
         },
       });
 
-      // Update the follower account
+      // Mettre à jour le compte follower
       await prisma.compte.update({
         where: { id: idCompte },
         data: {
@@ -1054,33 +1231,57 @@ class ClientController {
       if (error instanceof Error) {
         return res
           .status(500)
-          .json({ message: "Error adding measure", error: error.message });
+          .json({ message: "Erreur lors de l'ajout du suivi", error: error.message });
       }
     }
   }
 
+
   async addNote(req: ControllerRequest, res: Response) {
     try {
-      const { noter_id, noted_id, note } = req.body;
-
-      const notes = await prisma.note.create({
-        data: {
-          noter_id: parseInt(noter_id, 10),
-          noted_id: parseInt(noted_id, 10),
-          note: note, // Assurez-vous que la valeur est correcte
+      // Récupérer l'ID de l'utilisateur connecté à partir de req.id (déjà authentifié via middleware)
+      const noter_id = Number(req.id);
+  
+      // Récupérer les données de la requête
+      const { noted_id, note } = req.body;
+  
+      // Vérifier que le tailleur (noted_id) existe
+      const tailleurExists = await prisma.tailleur.findUnique({
+        where: {
+          id: Number(noted_id),
         },
       });
-
-      return res
-        .status(201)
-        .json({ message: "Note ajoutée avec succès.", data: notes });
+  
+      if (!tailleurExists) {
+        return res.status(404).json({ message: "Le tailleur n'existe pas." });
+      }
+  
+      // Vérifier que la note est valide (par exemple, entre 1 et 5)
+      if (note < 1 || note > 5) {
+        return res.status(400).json({ message: "La note doit être comprise entre 1 et 5." });
+      }
+  
+      // Ajouter la note dans la base de données
+      const newNote = await prisma.note.create({
+        data: {
+          noter_id: noter_id, // ID de l'utilisateur connecté
+          noted_id: Number(noted_id), // ID du tailleur à noter
+          note: note, // La valeur de la note
+        },
+      });
+  
+      // Réponse de succès
+      return res.status(201).json({
+        message: "Note ajoutée avec succès.",
+        data: newNote,
+      });
     } catch (error) {
       if (error instanceof Error) {
         return res.status(500).json({ message: error.message });
       }
     }
   }
-
+  
   async userProfile(req: ControllerRequest, res: Response) {
     try {
       const id = parseInt(req.id!);
@@ -1218,32 +1419,102 @@ class ClientController {
 
   async getSomeProfile(req: ControllerRequest, res: Response) {
     const { identifiant } = req.params;
-    const idCompte = Number(req.id); // Convert idCompte to a number
-    if (isNaN(idCompte)) {
+    const connectedUserId = Number(req.id);
+
+    if (isNaN(connectedUserId)) {
       return res
         .status(400)
         .json({ message: "ID de compte invalide", status: "KO" });
     }
 
     try {
-      // Fetch the Compte based on identifiant
-      const compte = await prisma.compte.findUnique({
-        where: { identifiant },
-        include: { user: true }, // Inclusion de la relation 'user' à la place de 'author'
+      // Fetch the Compte based on identifiant or id
+      const targetCompte = await prisma.compte.findFirst({
+        where: {
+          OR: [
+            { identifiant: identifiant },
+            { id: isNaN(Number(identifiant)) ? undefined : Number(identifiant) }
+          ]
+        },
+        include: {
+          user: true,
+          tailleur: true,
+          client: true
+        },
       });
 
+      if (!targetCompte) {
+        return res.status(404).json({ message: "Profil non trouvé", status: "KO" });
+      }
+
+      // Check if the connected user follows the target user
+      const follow = await prisma.follow.findFirst({
+        where: {
+          follower_id: connectedUserId,
+          followed_id: targetCompte.id,
+          status: "FOLLOWED"
+        }
+      });
+
+      const isFollowing = !!follow;
+
+      let additionalData = {};
+      if (targetCompte.role === "tailleur") {
+        const posts = await prisma.post.findMany({
+          where: {
+            AND: [{ tailleur_id: targetCompte.tailleur?.id }, { status: "PUBLIE" }],
+          },
+        });
+
+        const notes = await prisma.note.findMany({
+          where: {
+            noted_id: targetCompte.id,
+          },
+          select: {
+            note: true,
+          },
+        });
+
+        const totalDesNotes = notes.reduce((somme, note) => somme + parseFloat(note.note), 0);
+        const noteToShow = notes.length > 0 ? totalDesNotes / notes.length : 0;
+
+        const followeds = await prisma.follow.count({
+          where: {
+            AND: [{ followed_id: targetCompte.id }, { status: "FOLLOWED" }],
+          },
+        });
+
+        const followers = await prisma.follow.count({
+          where: {
+            AND: [{ follower_id: targetCompte.id }, { status: "FOLLOWED" }],
+          },
+        });
+
+        additionalData = {
+          posts,
+          noteToShow,
+          nbrAbonnee: followers,
+          nbrAbonnement: followeds,
+        };
+      } else if (targetCompte.role === "client") {
+        // Add any client-specific data here if needed
+      }
+
       return res.json({
-        compte,
-        message: "Donnée du profil recu",
+        compte: targetCompte,
+        ...additionalData,
+        isFollowing,
+        message: "Données du profil reçues",
         status: "OK",
       });
     } catch (err) {
-      // Handle any errors that occur during the process
+      console.error(err);
       return res
         .status(500)
         .json({ message: "Erreur interne du serveur", status: "KO" });
     }
   }
+
 
   async bloquer(req: ControllerRequest, res: Response) {
     try {
@@ -1491,17 +1762,77 @@ class ClientController {
     }
   }
 
-  async getTaille(req:ControllerRequest, res:Response){
+
+  // add paiement commande 
+  async addPaiementCommande(req: ControllerRequest, res: Response) {
+    const { post_id, qte, taille, montant } = req.body;
+    const compte_id = req.id; // ou req.user.id, selon votre implémentation d'authentification
+
+    // Vérification si compte_id est défini
+    if (!compte_id) {
+      return res.status(400).json({
+        message: "Utilisateur non authentifié, compte_id manquant",
+        status: "KO"
+      });
+    }
+
+    try {
+      const result = await prisma.$transaction(async (prisma) => {
+        // Créer la commande d'abord
+        const nouvelleCommande = await prisma.commande.create({
+          data: {
+            post: { connect: { id: parseInt(post_id) } }, // Lier le produit à la commande
+            qte: parseInt(qte),
+            taille,
+            compte: { connect: { id: parseInt(compte_id) } } // Lier l'utilisateur connecté
+          }
+        });
+
+        // Créer le paiement pour la commande nouvellement créée
+        const paiement = await prisma.paiement.create({
+          data: {
+            montant: parseFloat(montant),
+            commande: { connect: { id: nouvelleCommande.id } } // Lier le paiement à la commande créée
+          }
+        });
+
+        // Mettre à jour la commande avec le paiement
+        const updatedCommande = await prisma.commande.update({
+          where: { id: nouvelleCommande.id },
+          data: {
+            paiement: { connect: { id: paiement.id } }
+          }
+        });
+
+        return { paiement, commande: updatedCommande };
+      });
+
+      return res.status(200).json({
+        message: "Commande et paiement ajoutés avec succès",
+        status: "OK",
+        data: result
+      });
+    } catch (error) {
+      console.error("Erreur lors de l'ajout de la commande ou du paiement:", error);
+      return res.status(400).json({
+        message: error instanceof Error ? error.message : "Une erreur est survenue lors de l'ajout de la commande ou du paiement",
+        status: "KO"
+      });
+    }
+  }
+
+
+  async getTaille(req: ControllerRequest, res: Response) {
 
     const taille = await prisma.taille.findMany();
 
-    if(!taille){
+    if (!taille) {
       return res.status(404).json({
         message: "Taille introuvable",
         status: "KO"
       });
     }
-    
+
     return res.status(200).json({
 
       taille: taille,
@@ -1511,5 +1842,10 @@ class ClientController {
 
   }
 }
+
+
+
+
+
 
 export default new ClientController();
