@@ -15,6 +15,9 @@ router.route("/view").post(clientController.ViewsNb);
 // Faire une commande
 router.route("/commandes").post(clientController.createCommande);
 
+//route pour faire les paienments d'une commande
+router.route("/paiements").post(clientController.addPaiementCommande);
+
 // Définir la route GET pour récupérer les notifications ///////////////////////
 router.route("/notifications").get(clientController.getNotificationsForUser);
 // Route pour ajouter un like ou un dislike// Route pour ajouter un like//////////////////////////////////////
@@ -44,11 +47,13 @@ router
 // //route pour attribuer note a un compte
 router.route("/note").post(clientController.addNote);
 router.route("/follow").post(clientController.follow);
+router.route("/unfollow").post(clientController.unfollow);
 router.route("/discussions").get(clientController.getDiscussionData);
 
 router.route("/followers").get(clientController.getAllFollowers);
 
 router.route("/bloquer").post(isAuthenticatedGlobal, clientController.bloquer);
+
 
 router.route("/profile/:identifiant").get(clientController.getSomeProfile);
 

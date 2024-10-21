@@ -142,7 +142,7 @@ model Report {
 
 model Note {
   id        Int      @id @default(autoincrement())
-  note      String
+  note      Int      // Utilisez Int au lieu de String pour la note numérique
   noter_id  Int
   noted_id  Int
   createdAt DateTime @default(now())
@@ -150,10 +150,11 @@ model Note {
   noted     Compte   @relation("Noteds", fields: [noted_id], references: [id])
   noter     Compte   @relation("Noters", fields: [noter_id], references: [id])
 
-  @@unique([noter_id, noted_id])
+  @@unique([noter_id, noted_id]) // Un utilisateur ne peut noter un tailleur qu'une seule fois
   @@index([noted_id], map: "notes_noted_id_fkey")
   @@map("notes")
 }
+
 
 model Bloquer {
   id         Int      @id @default(autoincrement())
@@ -218,7 +219,7 @@ model Post {
   id          Int           @id @default(autoincrement())
   content     String
   title       String
-  price       Int @default(0)
+  price       Int           @default(0)
   files       Json?
   count       Int
   shareNb     Int
@@ -566,7 +567,7 @@ model Commande {
   id        Int        @id @default(autoincrement())
   post_id   Int
   compte_id Int
-  taille    Decimal? // Assurez-vous que c'est bien ici
+  taille    String // Assurez-vous que c'est bien ici
   qte       Decimal? // Assurez-vous que c'est bien ici
   createdAt DateTime   @default(now())
   updatedAt DateTime   @default(now())
