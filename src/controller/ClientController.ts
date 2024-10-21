@@ -823,6 +823,15 @@ class ClientController {
             },
           },
         },
+        status_like: {
+          include: {
+            compte: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
       },
     });
 
@@ -885,6 +894,15 @@ class ClientController {
                 compte: {
                   include: {
                     user: true, // Include user information related to your own compte
+                  },
+                },
+              },
+            },
+            status_like: {
+              include: {
+                compte: {
+                  include: {
+                    user: true,
                   },
                 },
               },
@@ -1762,7 +1780,6 @@ class ClientController {
     }
   }
 
-
   // add paiement commande 
   async addPaiementCommande(req: ControllerRequest, res: Response) {
     const { post_id, qte, taille, montant } = req.body;
@@ -1829,17 +1846,122 @@ class ClientController {
     if (!taille) {
       return res.status(404).json({
         message: "Taille introuvable",
-        status: "KO"
+        status: "KO",
+      });
+    }
+    return res.status(200).json({
+      taille: taille,
+      message: "Taille récupérée avec succès",
+      status: "OK",
+    });
+  }
+
+  async getAllStatusLikes(req: ControllerRequest, res: Response) {
+    const idCompte = parseInt(req.id!);
+    const { status_id } = req.params;
+
+    const userAccount = await prisma.compte.findUnique({
+      where: { id: idCompte },
+    });
+
+    if (!userAccount) {
+      return res.status(404).json({
+        message: "Utilisateur introuvable",
+        status: "KO",
+      });
+    }
+
+    const statusLikes = await prisma.statusLikes.findMany({
+      where: { status_id: parseInt(status_id), compte_id: userAccount.id },
+    });
+
+    if (!statusLikes) {
+      return res.status(404).json({
+        message: "Status likes introuvables",
+        status: "KO",
       });
     }
 
     return res.status(200).json({
+      statusLikes: statusLikes,
+      message: "Status likes récupérés avec succès",
+      status: "OK",
+    });
+  }
 
-      taille: taille,
-      message: "Taille récupérée avec succès",
-      status: "OK"
+  async updateStatusLikes(req: ControllerRequest, res: Response) {
+    const idCompte = parseInt(req.id!);
+    const { status_id, compte_id } = req.body;
+
+    const userAccount = await prisma.compte.findUnique({
+      where: { id: idCompte },
+    });
+    if (!userAccount) {
+      return res.status(404).json({
+        message: "Utilisateur introuvable",
+        status: "KO",
+      });
+    }
+
+    let statusLikes = await prisma.statusLikes.findFirst({
+      where: { status_id: parseInt(status_id), compte_id: parseInt(compte_id) },
     });
 
+    if (!statusLikes) {
+      statusLikes = await prisma.statusLikes.create({
+        data: {
+          status_id: parseInt(status_id),
+          compte_id: parseInt(compte_id),
+        },
+      });
+    } else {
+      await prisma.statusLikes.delete({
+        where: {
+          status_id_compte_id: {
+            status_id: parseInt(status_id),
+            compte_id: parseInt(compte_id),
+          },
+        },
+      });
+    }
+    return res.status(200).json({
+      message: "Status like mis à jour avec succès",
+      status: "OK",
+    });
+  }
+
+  async getAllPost(req: ControllerRequest, res: Response) {
+    try {
+      // Récupérer tous les posts associés à ce tailleur
+      const posts = await prisma.post.findMany({
+        include: {
+          comments: true, // Par exemple, inclure les commentaires associés aux posts
+        },
+      });
+
+      // Vérifier s'il y a des posts
+      if (posts.length === 0) {
+        return res.json({
+          posts: [],
+          message: "Aucun post trouvé pour ce tailleur",
+          status: "OK",
+        });
+      }
+
+      return res.json({
+        posts,
+        message: "Posts récupérés avec succès",
+        status: "OK",
+      });
+    } catch (error) {
+      // Gestion des erreurs
+      if (error instanceof Error) {
+        return res.status(500).json({
+          message: "Erreur lors de la récupération des posts",
+          error: error.message,
+        });
+      }
+    }
   }
 }
 

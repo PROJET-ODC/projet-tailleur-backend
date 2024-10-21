@@ -63,6 +63,7 @@ model Compte {
   notifier    Notification[] @relation("Notifier")
   reporteds   Report[]       @relation("Reporteds")
   reporters   Report[]       @relation("Reporters")
+  status_like StatusLikes[]
   tailleur    Tailleur?
   vendeur     Vendeur?
 
@@ -209,7 +210,7 @@ model Status {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now())
   tailleur    Tailleur @relation(fields: [tailleur_id], references: [id])
-
+  status_like StatusLikes[]
   @@index([tailleur_id], map: "status_tailleur_id_fkey")
   @@map("status")
 }
@@ -267,6 +268,22 @@ model Comment {
   @@index([compte_id], map: "comments_compte_id_fkey")
   @@index([post_id], map: "comments_post_id_fkey")
   @@map("comments")
+
+}
+
+model StatusLikes {
+  id Int  @id @default(autoincrement())
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @default(now())
+  status_id Int
+  compte_id Int
+  compte      Compte     @relation(fields: [compte_id], references: [id])
+  status      Status @relation(fields: [status_id], references: [id])
+
+  @@unique([status_id, compte_id])
+  @@index([compte_id], map: "status_likes_compte_id_fkey")
+  @@index([status_id], map: "status_likes_status_id_fkey")
+  @@map("status_likes")
 }
 
 model CommentResponse {
