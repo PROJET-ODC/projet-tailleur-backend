@@ -89,7 +89,7 @@ class TailleurController {
           status: "KO",
         });
       }
-//salu
+      //salu
       // Supprimer le statut
       await prisma.status.delete({
         where: { id: status_id },
@@ -132,8 +132,8 @@ class TailleurController {
         999
       );
 
-      const { content, title, useCredit, status, categorie,price } = req.body;
-        const prix = Number(price);
+      const { content, title, useCredit, status, categorie, price } = req.body;
+      const prix = Number(price);
       if (!content || typeof content !== "string") {
         return res.status(400).json({
           message: "Le contenu doit être une chaîne de caractères non vide",
@@ -225,7 +225,7 @@ class TailleurController {
           shareNb: 0,
           viewNb: 0,
           count: 2,
-          price:prix,
+          price: prix,
           tailleur_id: tailleur.id,
           categorie: req.body.categorie || null,
           status: req.body.status || "draft",
@@ -258,7 +258,7 @@ class TailleurController {
             },
           },
         },
-      })
+      });
       return res.status(201).json({
         message: "Post créé avec succès",
         status: "OK",
@@ -331,20 +331,19 @@ class TailleurController {
     }
   }
 
-
   async getPostsByCompteId(req: ControllerRequest, res: Response) {
     try {
       // Récupérer l'ID du compte à partir des paramètres de la requête
       const compteId = parseInt(req.id!);
       console.log(compteId);
-      
+
       if (isNaN(compteId)) {
         return res.status(400).json({
           message: "ID de compte invalide",
           status: "BAD_REQUEST",
         });
       }
-  
+
       // Rechercher les posts liés à ce compte spécifique
       const posts = await prisma.post.findMany({
         where: {
@@ -376,14 +375,14 @@ class TailleurController {
         },
         orderBy: { createdAt: "desc" }, // Trier par date de création descendante
       });
-  
+
       if (posts.length === 0) {
         return res.status(404).json({
           message: "Aucun post trouvé pour ce compte",
           status: "NOT_FOUND",
         });
       }
-  
+
       return res.status(200).json({
         message: "Posts récupérés avec succès",
         status: "OK",
@@ -405,9 +404,7 @@ class TailleurController {
       }
     }
   }
-  
-  
-  
+
   async acheterCredit(req: ControllerRequest, res: Response) {
     try {
       let { montant } = req.body;
@@ -533,7 +530,7 @@ class TailleurController {
       const compte_id = parseInt(req.id!);
 
       const tailleur = await prisma.tailleur.findUnique({
-        where: { compte_id:compte_id },
+        where: { compte_id: compte_id },
       });
 
       if (!tailleur) {
@@ -808,7 +805,6 @@ class TailleurController {
         });
       }
 
-      // Récupérer tous les posts associés à ce tailleur
       const posts = await prisma.post.findMany({
         where: { tailleur_id: tailleur.id }, // Filtrer les posts par l'ID du tailleur trouvé
         include: {
