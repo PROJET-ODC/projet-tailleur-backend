@@ -219,7 +219,7 @@ class TailleurController {
       // Créer le post avec les liens des fichiers
       const newPost = await prisma.post.create({
         data: {
-          content,
+          content: "",
           title,
           files: uploadedFileUrls.join(","), // Stocker tous les liens en base, séparés par des virgules
           shareNb: 0,
@@ -265,8 +265,8 @@ class TailleurController {
         post: {
           ...posted,
           user: {
-            firstname: posted.tailleur.compte.user.firstname,
-            lastname: posted.tailleur.compte.user.lastname,
+            firstname: posted?.tailleur.compte.user.firstname,
+            lastname: posted?.tailleur.compte.user.lastname,
           },
         },
       });

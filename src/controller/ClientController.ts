@@ -344,7 +344,7 @@ class ClientController {
   }
 
   async getMesssage(req: ControllerRequest, res: Response): Promise<Response> {
-    const { id } = Number(req.id!);
+    const id = parseInt(req.id!);
     try {
       // Récupération de l'ID utilisateur à partir des paramètres de la requête
       const userId = Number(req.params.user_id);
@@ -1354,7 +1354,7 @@ class ClientController {
         });
 
         const totalDesNotes = notes.reduce((somme, note) => {
-          return somme + parseFloat(note.note); // Convertit chaque note en nombre et fait la somme
+          return somme + note.note; // Convertit chaque note en nombre et fait la somme
         }, 0);
 
         const noteToShow = totalDesNotes / notes.length || 0;
@@ -1514,7 +1514,7 @@ class ClientController {
         });
 
         const totalDesNotes = notes.reduce(
-          (somme, note) => somme + parseFloat(note.note),
+          (somme, note) => somme + note.note,
           0
         );
         const noteToShow = notes.length > 0 ? totalDesNotes / notes.length : 0;
@@ -1695,7 +1695,7 @@ class ClientController {
 
       const comptesAvecSommeDesNotes = comptesNonSuivis.map((compte) => {
         const sommeDesNotes = compte.noteds.reduce(
-          (total, note) => total + parseInt(note.note, 10),
+          (total, note) => total + note.note,
           0
         );
         return {
